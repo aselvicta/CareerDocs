@@ -6,10 +6,12 @@ import { getApiBase } from '../api'
 import { useAuth } from '../AuthContext'
 import { useToast } from '../ToastContext'
 
+
 export function Register() {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [password1, setPassword1] = useState('')
+  const [password2, setPassword2] = useState('')
   const [error, setError] = useState('')
   const { register } = useAuth()
   const { addToast } = useToast()
@@ -18,8 +20,14 @@ export function Register() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    // Send both password1 and password2 to backend
     try {
-      await register(email, password, username || email)
+      await register({
+        email,
+        username: username || email,
+        password1,
+        password2
+      })
       addToast('Account created.', 'success')
       navigate('/')
     } catch (err) {
@@ -83,8 +91,20 @@ export function Register() {
               <label><Lock size={14} /> Password</label>
               <input
                 type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
+                value={password1}
+                onChange={e => setPassword1(e.target.value)}
+                required
+                autoComplete="new-password"
+                placeholder="••••••••"
+                className="form-control"
+              />
+            </div>
+            <div className="form-group">
+              <label><Lock size={14} /> Confirm Password</label>
+              <input
+                type="password"
+                value={password2}
+                onChange={e => setPassword2(e.target.value)}
                 required
                 autoComplete="new-password"
                 placeholder="••••••••"
