@@ -1,0 +1,11 @@
+{% extends "documents/base.html" %}
+{% block title %}Delete Letter - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>Delete letter</h1>
+<p>Are you sure you want to delete this {{ letter.get_letter_type_display }}?</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">Yes, delete</button>
+  <a href="{% url 'documents:letter_detail' letter.pk %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "documents/base.html" %}
+{% block title %}{{ letter.get_letter_type_display }} - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>{{ letter.get_letter_type_display }}{% if letter.title %} — {{ letter.title }}{% endif %}</h1>
+<p class="muted">Updated {{ letter.updated_at|date:"M d, Y" }}</p>
+<p>
+  <a href="{% url 'documents:letter_edit' letter.pk %}" class="btn">Edit</a>
+  <a href="{% url 'documents:letter_export_pdf' letter.pk %}" class="btn">Export PDF</a>
+  <a href="{% url 'documents:letter_export_docx' letter.pk %}" class="btn">Export Word</a>
+  <a href="{% url 'documents:letter_delete' letter.pk %}" class="btn btn-danger">Delete</a>
+</p>
+
+<div class="card">
+  {% if letter.sender_name or letter.sender_email %}<p>{{ letter.sender_name }} · {{ letter.sender_email }} · {{ letter.sender_phone }}</p>{% endif %}
+  <p><strong>To:</strong> {{ letter.recipient_name }}{% if letter.recipient_title %}, {{ letter.recipient_title }}{% endif %}</p>
+  {% if letter.company %}<p>{{ letter.company }}</p>{% endif %}
+  <hr style="border-color:var(--border);">
+  <div style="white-space: pre-wrap;">{{ letter.body }}</div>
+  <hr style="border-color:var(--border);">
+  <p>Sincerely,<br>{{ letter.sender_name }}</p>
+</div>
+{% endblock %}

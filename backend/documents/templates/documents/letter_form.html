@@ -1,0 +1,73 @@
+{% extends "documents/base.html" %}
+{% block title %}{% if is_edit %}Edit Letter{% else %}Create Letter{% endif %} - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>{% if is_edit %}Edit Letter{% else %}Create new letter{% endif %}</h1>
+<p class="muted">Choose type: Cover Letter, Internship Application, Job Application, Recommendation, or Resignation.</p>
+<form method="post" id="letter-form">
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="form-group">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {% if field.name == 'body' %}
+    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+      {{ field }}
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary" id="btn-generate-body">Generate with AI</button>
+        <button type="button" class="btn btn-secondary" id="btn-suggest-alt">Suggest alternatives</button>
+      </div>
+    </div>
+    {% else %}
+    {{ field }}
+    {% endif %}
+    {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  {% endfor %}
+  <button type="submit" class="btn">Save letter</button>
+  {% if is_edit %}<a href="{% url 'documents:letter_detail' letter.pk %}" class="btn btn-secondary">Cancel</a>{% endif %}
+</form>
+<p class="muted" style="margin-top:1rem;">Generate body from recipient/company/role, or get alternative phrasings to avoid repetition.</p>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function() {
+  var bodyEl = document.getElementById('id_body');
+  var enhanceUrl = '{% url "documents:api_enhance" %}';
+  var suggestUrl = '{% url "documents:api_suggest_alternatives" %}';
+  var generateUrl = '{% url "documents:api_generate_letter_body" %}';
+  var letterTypeEl = document.getElementById('id_letter_type');
+  function getLetterType() { return letterTypeEl ? letterTypeEl.value : 'cover'; }
+  document.getElementById('btn-suggest-alt').addEventListener('click', function() {
+    if (!bodyEl.value.trim()) { alert('Enter some text first.'); return; }
+    this.disabled = true;
+    var btn = this;
+    fetch(suggestUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.csrfToken },
+      body: JSON.stringify({ text: bodyEl.value })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.alternatives) alert('Alternatives:\n\n' + data.alternatives);
+      else if (data.error) alert('Error: ' + data.error);
+    }).catch(function() { alert('Request failed.'); }).finally(function() { btn.disabled = false; });
+  });
+  document.getElementById('btn-generate-body').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true;
+    var ctx = {
+      letter_type: getLetterType(),
+      recipient_name: (document.getElementById('id_recipient_name') || {}).value,
+      company: (document.getElementById('id_company') || {}).value,
+      role_or_position: 'position',
+      sender_name: (document.getElementById('id_sender_name') || {}).value
+    };
+    fetch(generateUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.csrfToken },
+      body: JSON.stringify({ letter_type: getLetterType(), context: ctx })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.body) bodyEl.value = data.body;
+      else if (data.error) alert('Error: ' + data.error);
+    }).catch(function() { alert('Request failed.'); }).finally(function() { btn.disabled = false; });
+  });
+})();
+</script>
+{% endblock %}

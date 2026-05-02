@@ -1,0 +1,11 @@
+{% extends "documents/base.html" %}
+{% block title %}Delete CV - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>Delete CV</h1>
+<p>Are you sure you want to delete <strong>{{ cv.title }}</strong>?</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">Yes, delete</button>
+  <a href="{% url 'documents:cv_detail' cv.pk %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

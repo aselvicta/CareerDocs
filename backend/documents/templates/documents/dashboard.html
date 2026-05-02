@@ -1,0 +1,34 @@
+{% extends "documents/base.html" %}
+{% block title %}Dashboard - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<p class="muted">Create and manage your CVs and professional letters.</p>
+
+<div class="card">
+  <h2>CVs</h2>
+  <p><a href="{% url 'documents:cv_create' %}" class="btn">Create new CV</a> <a href="{% url 'documents:cv_list' %}" class="btn btn-secondary">View all</a></p>
+  {% if cvs %}
+  <ul>
+    {% for cv in cvs %}
+    <li><a href="{% url 'documents:cv_detail' cv.pk %}">{{ cv.title }}</a> — {{ cv.template }} (updated {{ cv.updated_at|date:"M d, Y" }})</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">No CVs yet. Create your first CV above.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Letters</h2>
+  <p><a href="{% url 'documents:letter_create' %}" class="btn">Create new letter</a> <a href="{% url 'documents:letter_list' %}" class="btn btn-secondary">View all</a></p>
+  {% if letters %}
+  <ul>
+    {% for letter in letters %}
+    <li><a href="{% url 'documents:letter_detail' letter.pk %}">{{ letter.get_letter_type_display }}{% if letter.title %} — {{ letter.title }}{% endif %}</a> ({{ letter.updated_at|date:"M d, Y" }})</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">No letters yet. Create a cover letter, job application, or other letter above.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "documents/base.html" %}
+{% block title %}My CVs - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>My CVs</h1>
+<p><a href="{% url 'documents:cv_create' %}" class="btn">Create new CV</a></p>
+{% if cvs %}
+  {% for cv in cvs %}
+  <div class="card">
+    <h2 style="margin-top:0;"><a href="{% url 'documents:cv_detail' cv.pk %}">{{ cv.title }}</a></h2>
+    <p class="muted">Template: {{ cv.template }} · Updated {{ cv.updated_at|date:"M d, Y" }}</p>
+    <p>
+      <a href="{% url 'documents:cv_edit' cv.pk %}" class="btn btn-secondary">Edit</a>
+      <a href="{% url 'documents:cv_export_pdf' cv.pk %}" class="btn btn-secondary">Export PDF</a>
+      <a href="{% url 'documents:cv_export_docx' cv.pk %}" class="btn btn-secondary">Export Word</a>
+      <a href="{% url 'documents:cv_delete' cv.pk %}" class="btn btn-danger">Delete</a>
+    </p>
+  </div>
+  {% endfor %}
+{% else %}
+  <p class="muted">No CVs yet. <a href="{% url 'documents:cv_create' %}">Create your first CV</a>.</p>
+{% endif %}
+{% endblock %}

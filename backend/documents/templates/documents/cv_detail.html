@@ -1,0 +1,33 @@
+{% extends "documents/base.html" %}
+{% block title %}{{ cv.title }} - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>{{ cv.title }}</h1>
+<p class="muted">Template: {{ cv.get_template_display }} · Updated {{ cv.updated_at|date:"M d, Y" }}</p>
+<p>
+  <a href="{% url 'documents:cv_edit' cv.pk %}" class="btn">Edit</a>
+  <a href="{% url 'documents:cv_export_pdf' cv.pk %}" class="btn">Export PDF</a>
+  <a href="{% url 'documents:cv_export_docx' cv.pk %}" class="btn">Export Word</a>
+  <a href="{% url 'documents:cv_delete' cv.pk %}" class="btn btn-danger">Delete</a>
+</p>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ cv.full_name|default:"Name" }}</h2>
+  <p>{{ cv.email }} · {{ cv.phone }} · {{ cv.location }}</p>
+  {% if cv.summary %}
+  <h3>Summary</h3>
+  <p>{{ cv.summary|linebreaks }}</p>
+  {% endif %}
+  {% if cv.experience %}
+  <h3>Experience</h3>
+  <p>{{ cv.experience|linebreaks }}</p>
+  {% endif %}
+  {% if cv.education %}
+  <h3>Education</h3>
+  <p>{{ cv.education|linebreaks }}</p>
+  {% endif %}
+  {% if cv.skills %}
+  <h3>Skills</h3>
+  <p>{{ cv.skills|linebreaks }}</p>
+  {% endif %}
+</div>
+{% endblock %}

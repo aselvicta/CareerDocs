@@ -1,0 +1,53 @@
+{% extends "documents/base.html" %}
+{% block title %}{% if is_edit %}Edit CV{% else %}Create CV{% endif %} - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>{% if is_edit %}Edit CV{% else %}Create new CV{% endif %}</h1>
+<form method="post" id="cv-form">
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="form-group" data-field="{{ field.name }}">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+      {{ field }}
+      {% if field.name == 'summary' or field.name == 'experience' or field.name == 'education' or field.name == 'skills' %}
+      <button type="button" class="btn btn-secondary ai-enhance" data-field="{{ field.name }}" style="flex-shrink:0;">Enhance with AI</button>
+      {% endif %}
+    </div>
+    {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  {% endfor %}
+  <button type="submit" class="btn">Save CV</button>
+  {% if is_edit %}<a href="{% url 'documents:cv_detail' cv.pk %}" class="btn btn-secondary">Cancel</a>{% endif %}
+</form>
+<p class="muted" style="margin-top:1rem;">Use "Enhance with AI" to improve summary, experience, or education text using DeepSeek.</p>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function() {
+  document.querySelectorAll('.ai-enhance').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var fieldName = this.dataset.field;
+      var field = document.getElementById('id_' + fieldName);
+      if (!field || !field.value.trim()) { alert('Enter some text first.'); return; }
+      this.disabled = true;
+      this.textContent = '...';
+      fetch('{% url "documents:api_enhance" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.csrfToken },
+        body: JSON.stringify({
+          context: 'CV for professional use',
+          text: field.value,
+          field_hint: fieldName
+        })
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.enhanced) field.value = data.enhanced;
+        else if (data.error) alert('Error: ' + data.error);
+      }).finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Enhance with AI';
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}

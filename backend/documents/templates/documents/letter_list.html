@@ -1,0 +1,22 @@
+{% extends "documents/base.html" %}
+{% block title %}My Letters - Career Docs Generator{% endblock %}
+{% block content %}
+<h1>My Letters</h1>
+<p><a href="{% url 'documents:letter_create' %}" class="btn">Create new letter</a></p>
+{% if letters %}
+  {% for letter in letters %}
+  <div class="card">
+    <h2 style="margin-top:0;"><a href="{% url 'documents:letter_detail' letter.pk %}">{{ letter.get_letter_type_display }}{% if letter.title %} — {{ letter.title }}{% endif %}</a></h2>
+    <p class="muted">To: {{ letter.recipient_name|default:"—" }} · {{ letter.company|default:"" }} · Updated {{ letter.updated_at|date:"M d, Y" }}</p>
+    <p>
+      <a href="{% url 'documents:letter_edit' letter.pk %}" class="btn btn-secondary">Edit</a>
+      <a href="{% url 'documents:letter_export_pdf' letter.pk %}" class="btn btn-secondary">Export PDF</a>
+      <a href="{% url 'documents:letter_export_docx' letter.pk %}" class="btn btn-secondary">Export Word</a>
+      <a href="{% url 'documents:letter_delete' letter.pk %}" class="btn btn-danger">Delete</a>
+    </p>
+  </div>
+  {% endfor %}
+{% else %}
+  <p class="muted">No letters yet. <a href="{% url 'documents:letter_create' %}">Create a cover letter, job application, or other letter</a>.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Career Docs Generator{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+      --success: #3fb950;
+      --danger: #f85149;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; min-height: 100vh; line-height: 1.5; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+    .container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    nav a { margin-right: 1rem; }
+    .btn { display: inline-block; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.95rem; background: var(--accent); color: #fff; }
+    .btn:hover { background: var(--accent-hover); color: #fff; text-decoration: none; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .form-control { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 1rem; }
+    .form-control:focus { outline: none; border-color: var(--accent); }
+    label { display: block; margin-bottom: 0.25rem; color: var(--muted); font-size: 0.9rem; }
+    .form-group { margin-bottom: 1rem; }
+    .errorlist { color: var(--danger); margin: 0.25rem 0 0 0; padding: 0; list-style: none; }
+    h1, h2 { margin-top: 0; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <nav>
+    <div>
+      <a href="{% url 'documents:dashboard' %}">Dashboard</a>
+      <a href="{% url 'documents:cv_list' %}">CVs</a>
+      <a href="{% url 'documents:letter_list' %}">Letters</a>
+    </div>
+    <div>
+      <span class="muted">{{ user.email }}</span>
+      <a href="{% url 'profile' %}">Profile</a>
+      <a href="{% url 'logout' %}">Logout</a>
+    </div>
+  </nav>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    function getCookie(name) {
+      let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? v[2] : null;
+    }
+    window.csrfToken = getCookie('csrftoken');
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
