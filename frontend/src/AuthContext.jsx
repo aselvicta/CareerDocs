@@ -35,11 +35,27 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  async function register(email, password, username = '') {
-    const data = await api.post('/auth/register/', { email, password, username: username || email })
-    setToken(data.token)
-    setUser(data.user)
-    return data
+  async function register(fields) {
+    try {
+      const data = await api.post('/auth/register/', fields)
+      setToken(data.token)
+      setUser(data.user)
+      return data
+    } catch (err) {
+      // Try to extract backend error details
+      let msg = 'Registration failed'
+      if (err && err.response) {
+        try {
+          const res = await err.response.json()
+          msg = Object.entries(res)
+            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+            .join(' | ')
+        } catch {}
+      } else if (err && err.message) {
+        msg = err.message
+      }
+      throw new Error(msg)
+    }
   }
 
   function logout() {
