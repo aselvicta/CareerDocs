@@ -1,5 +1,6 @@
 import { Link, Outlet } from 'react-router-dom'
 import { LayoutDashboard, FileText, Mail, LogOut, User, Sun, Moon, Send, Settings, Briefcase } from 'lucide-react'
+import { AppLogo } from './AppLogo'
 import { useAuth } from './AuthContext'
 import { useTheme } from './ThemeContext'
 import { EmailAssistant } from './EmailAssistant'
@@ -13,7 +14,7 @@ export function Layout() {
     <>
       <nav className="nav">
         <Link to="/" className="nav__brand">
-          <FileText size={20} /> Career Docs
+          <AppLogo className="app-logo--nav" /> Career Docs
         </Link>
         <div className="nav__links">
           <Link to="/" className="nav__link"><LayoutDashboard size={18} /> Dashboard</Link>

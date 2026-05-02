@@ -25,8 +25,17 @@ except ImportError:
 
 # DeepSeek API key for AI-enhanced content (env var: docs_generator_api_key)
 DOCS_GENERATOR_API_KEY = os.environ.get('docs_generator_api_key', '')
-# Frontend base URL for share links (env: FRONTEND_URL)
+# Frontend base URL for share links and OAuth redirects (env: FRONTEND_URL)
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+
+# Google OAuth — create OAuth 2.0 Client ID at https://console.cloud.google.com/apis/credentials
+# Authorized redirect URI must match (dev with Vite proxy): http://localhost:5173/api/auth/google/callback
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '').strip()
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '').strip()
+GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
+    'GOOGLE_OAUTH_REDIRECT_URI',
+    f"{FRONTEND_URL.rstrip('/')}/api/auth/google/callback",
+)
 
 
 # Quick-start development settings - unsuitable for production

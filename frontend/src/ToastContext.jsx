@@ -10,6 +10,8 @@ const ICONS = {
   warning: AlertTriangle,
 }
 
+const TOAST_DURATION_MS = 4000
+
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
 
@@ -18,7 +20,7 @@ export function ToastProvider({ children }) {
     setToasts(prev => [...prev, { id, message, type }])
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
-    }, 4000)
+    }, TOAST_DURATION_MS)
   }, [])
 
   const removeToast = useCallback((id) => {
@@ -30,14 +32,27 @@ export function ToastProvider({ children }) {
       {children}
       <div className="toast-container" aria-live="polite">
         {toasts.map(t => {
-          const Icon = ICONS[t.type] || Info
+          const toastType = ICONS[t.type] ? t.type : 'info'
+          const Icon = ICONS[toastType]
           return (
-            <div key={t.id} className={`toast toast--${t.type}`} role="alert">
-              <Icon size={20} className="toast__icon" aria-hidden />
-              <span className="toast__text">{t.message}</span>
-              <button type="button" className="toast__close" onClick={() => removeToast(t.id)} aria-label="Dismiss">
-                <X size={18} />
-              </button>
+            <div
+              key={t.id}
+              className={`toast toast--${toastType}`}
+              role="alert"
+              style={{ '--toast-duration': `${TOAST_DURATION_MS}ms` }}
+            >
+              <div className="toast__body">
+                <span className={`toast__icon-wrap toast__icon-wrap--${toastType}`}>
+                  <Icon size={20} className="toast__icon" aria-hidden strokeWidth={2.5} />
+                </span>
+                <span className="toast__text">{t.message}</span>
+                <button type="button" className="toast__close" onClick={() => removeToast(t.id)} aria-label="Dismiss">
+                  <X size={16} strokeWidth={2.25} />
+                </button>
+              </div>
+              <div className="toast__progress-track" aria-hidden>
+                <div className={`toast__progress-bar toast__progress-bar--${toastType}`} />
+              </div>
             </div>
           )
         })}

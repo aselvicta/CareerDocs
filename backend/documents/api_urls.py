@@ -1,8 +1,11 @@
 from django.urls import path
 from . import api_views
+from . import google_oauth
 
 urlpatterns = [
     path('auth/csrf/', api_views.api_csrf),
+    path('auth/google/', google_oauth.google_oauth_start),
+    path('auth/google/callback/', google_oauth.google_oauth_callback),
     path('auth/register/', api_views.api_register),
     path('auth/login/', api_views.api_login),
     path('auth/logout/', api_views.api_logout),

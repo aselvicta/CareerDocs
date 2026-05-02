@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { FileText } from 'lucide-react'
+import { AppLogo } from '../AppLogo'
 import { api } from '../api'
 
 export function CVPublic() {
@@ -27,7 +27,7 @@ export function CVPublic() {
     <div className="page">
       <div className="page-header page-header--row" style={{ marginBottom: '1rem' }}>
         <Link to="/" className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-          <FileText size={18} /> Career Docs
+          <AppLogo className="app-logo--public" /> Career Docs
         </Link>
         <span className="meta">Public view</span>
       </div>

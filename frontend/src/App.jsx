@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ThemeProvider } from './ThemeContext'
 import { ToastProvider } from './ToastContext'
 import { EmailDraftProvider } from './EmailDraftContext'
@@ -7,6 +7,7 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { Layout } from './Layout'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
+import { OAuthCallback } from './pages/OAuthCallback'
 import { Dashboard } from './pages/Dashboard'
 import { CVList } from './pages/CVList'
 import { CVTemplates } from './pages/CVTemplates'
@@ -26,11 +27,14 @@ import { ApplicationForm } from './pages/ApplicationForm'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
-  if (loading) return <div className="app-loading">Loading...</div>
+  const location = useLocation()
+  const skipAuthLoading = location.pathname === '/oauth/callback'
+  if (loading && !skipAuthLoading) return <div className="app-loading">Loading...</div>
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/view/cv/:token" element={<CVPublic />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
