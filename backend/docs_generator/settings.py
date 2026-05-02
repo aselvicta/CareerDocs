@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 
+import dj_database_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,32 +25,38 @@ try:
 except ImportError:
     pass
 
+# --- Core ---
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
+
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-k0wg^)ksbg192)hrsb9!-rs*vzs5ev=mn+=dn_h3z568+@ofm_',
+)
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+if os.environ.get('ALLOWED_HOSTS'):
+    ALLOWED_HOSTS = [
+        h.strip() for h in os.environ['ALLOWED_HOSTS'].split(',') if h.strip()
+    ]
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:5173', '127.0.0.1:5173']
+
 # DeepSeek API key for AI-enhanced content (env var: docs_generator_api_key)
 DOCS_GENERATOR_API_KEY = os.environ.get('docs_generator_api_key', '')
-# Frontend base URL for share links and OAuth redirects (env: FRONTEND_URL)
+# Frontend base URL for share links and OAuth *redirect to SPA* (env: FRONTEND_URL)
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
-# Google OAuth — create OAuth 2.0 Client ID at https://console.cloud.google.com/apis/credentials
-# Authorized redirect URI must match (dev with Vite proxy): http://localhost:5173/api/auth/google/callback
+# Google OAuth — https://console.cloud.google.com/apis/credentials
+# Local (Vite proxy): redirect can be http://localhost:5173/api/auth/google/callback
+# Vercel + Render: set GOOGLE_OAUTH_REDIRECT_URI to your *backend* URL, e.g.
+# https://your-service.onrender.com/api/auth/google/callback
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '').strip()
 GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '').strip()
 GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
     'GOOGLE_OAUTH_REDIRECT_URI',
     f"{FRONTEND_URL.rstrip('/')}/api/auth/google/callback",
-)
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-k0wg^)ksbg192)hrsb9!-rs*vzs5ev=mn+=dn_h3z568+@ofm_'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:5173', '127.0.0.1:5173']
+).strip()
 
 
 # Application definition
@@ -73,6 +81,7 @@ LOGIN_REDIRECT_URL = '/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -106,10 +115,11 @@ WSGI_APPLICATION = 'docs_generator.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
@@ -148,6 +158,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # REST API for React frontend
 REST_FRAMEWORK = {
@@ -160,13 +171,17 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS: allow React dev server (and same origin for production)
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+_dev_origins = ['http://localhost:5173', 'http://127.0.0.1:5173']
+_extra_cors = [
+    o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()
 ]
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys(_dev_origins + _extra_cors))
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+
+_extra_csrf = [
+    o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+]
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(_dev_origins + _extra_csrf))
 
 # Email (SMTP by default; override with .env)
 # For Gmail: use an App Password (not your normal account password).
@@ -180,5 +195,9 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'Career Docs <{EMAIL_HOST_USER or "noreply@example.com"}>')
 
-
-
+# Production HTTPS (Render, etc.)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'true').lower() in ('true', '1', 'yes')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True

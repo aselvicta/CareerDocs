@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, UserPlus } from 'lucide-react'
 import { AppLogo } from '../AppLogo'
+import { getApiBase } from '../api'
 import { useAuth } from '../AuthContext'
 import { useToast } from '../ToastContext'
 
@@ -42,7 +43,7 @@ export function Register() {
           <button
             type="button"
             className="btn btn-google btn--full"
-            onClick={() => { window.location.href = '/api/auth/google/' }}
+            onClick={() => { window.location.href = `${getApiBase()}/auth/google/` }}
           >
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
               <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />

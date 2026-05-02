@@ -88,5 +88,38 @@ Frontend runs at **http://localhost:5173/**. It proxies `/api` to the Django bac
 
 ---
 
+## Deploy (Vercel + Render)
+
+### Backend (Render)
+
+1. Create a **PostgreSQL** instance on Render and copy its **Internal/External Database URL**.
+2. **New Web Service** from this repo; set **Root Directory** to `backend`.
+3. **Build command:** `bash build.sh` (Linux shell on Render; ensures `pip install`, `collectstatic`, `migrate`).
+4. **Start command:** `gunicorn docs_generator.wsgi:application --bind 0.0.0.0:$PORT`
+5. **Environment variables** (minimum):
+
+| Variable | Example |
+|----------|---------|
+| `SECRET_KEY` | Long random string |
+| `DEBUG` | `False` |
+| `ALLOWED_HOSTS` | `your-service.onrender.com` |
+| `DATABASE_URL` | From Render Postgres |
+| `FRONTEND_URL` | `https://your-app.vercel.app` |
+| `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
+| `CSRF_TRUSTED_ORIGINS` | `https://your-app.vercel.app` |
+| `docs_generator_api_key` | Your DeepSeek key |
+
+**Google OAuth (split frontend/backend):** set `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REDIRECT_URI=https://your-service.onrender.com/api/auth/google/callback`. Register that same URI in Google Cloud Console.
+
+### Frontend (Vercel)
+
+1. **Import** the GitHub repo; **Root Directory** `frontend`.
+2. **Build:** `npm run build` · **Output:** `dist`
+3. Add **`VITE_API_BASE_URL`** = `https://your-service.onrender.com` (no trailing slash). Redeploy after changing env vars.
+
+Local dev still uses the Vite proxy; leave `VITE_API_BASE_URL` unset locally.
+
+---
+
 **Career Docs Generator** streamlines the process of creating professional documents, making it easy for users to produce polished, AI-enhanced CVs and letters for their career needs.
 

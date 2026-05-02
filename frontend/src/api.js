@@ -1,5 +1,16 @@
-const API = '/api'
 const TOKEN_KEY = 'docs_token'
+
+/**
+ * API base path: `/api` in dev (Vite proxy), or `https://your-backend.com/api` when
+ * `VITE_API_BASE_URL` is set (e.g. on Vercel).
+ */
+export function getApiBase() {
+  const raw = import.meta.env.VITE_API_BASE_URL || ''
+  const origin = String(raw).replace(/\/$/, '')
+  return origin ? `${origin}/api` : '/api'
+}
+
+const API = getApiBase()
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY)
