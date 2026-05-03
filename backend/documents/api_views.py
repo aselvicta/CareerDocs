@@ -49,7 +49,10 @@ def api_register(request):
     try:
         email = (data.get('email') or '').strip()
         username = (data.get('username') or '').strip() or email
-        password = data.get('password') or ''
+        password = (data.get('password') or data.get('password1') or '').strip()
+        password2 = data.get('password2')
+        if password2 not in (None, '') and password != str(password2).strip():
+            return JsonResponse({'error': 'Passwords do not match'}, status=400)
         if not email:
             return JsonResponse({'error': 'Email is required'}, status=400)
         if not password:

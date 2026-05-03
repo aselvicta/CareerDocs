@@ -20,13 +20,16 @@ export function Register() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    // Send both password1 and password2 to backend
+    if (password1 !== password2) {
+      setError('Passwords do not match.')
+      addToast('Passwords do not match.', 'error')
+      return
+    }
     try {
       await register({
         email,
         username: username || email,
-        password1,
-        password2
+        password: password1,
       })
       addToast('Account created.', 'success')
       navigate('/')
