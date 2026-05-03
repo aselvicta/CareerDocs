@@ -119,6 +119,8 @@ Frontend runs at **http://localhost:5173/**. It proxies `/api` to the Django bac
 
 Local dev still uses the Vite proxy; leave `VITE_API_BASE_URL` unset locally.
 
+**Production issues:** Console **404** on `/vite.svg`, `/api/...`, or `register`: ensure `VITE_API_BASE_URL` is set **before build** on Vercel and trigger a redeploy—blank env means browsers call `/api` on `*.vercel.app`, which does not exist. **400** on `POST …/register/` usually means validation (e.g. **email already registered**); read the toast or Network response JSON (`error` field).
+
 ---
 
 **Career Docs Generator** streamlines the process of creating professional documents, making it easy for users to produce polished, AI-enhanced CVs and letters for their career needs.

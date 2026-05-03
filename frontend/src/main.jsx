@@ -4,11 +4,14 @@ import './index.css'
 import App from './App.jsx'
 import logoUrl from './assets/logo.png'
 
-const favicon = document.querySelector("link[rel~='icon']")
-if (favicon) {
-  favicon.href = logoUrl
+let favicon = document.querySelector("link[rel='icon']")
+if (!favicon) {
+  favicon = document.createElement('link')
+  favicon.rel = 'icon'
   favicon.type = 'image/png'
+  document.head.appendChild(favicon)
 }
+favicon.href = logoUrl
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

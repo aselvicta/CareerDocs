@@ -2,11 +2,17 @@ const TOKEN_KEY = 'docs_token'
 
 /**
  * API base path: `/api` in dev (Vite proxy), or `https://your-backend.com/api` when
- * `VITE_API_BASE_URL` is set (e.g. on Vercel).
+ * `VITE_API_BASE_URL` is set at build time (required on Vercel).
  */
 export function getApiBase() {
   const raw = import.meta.env.VITE_API_BASE_URL || ''
-  const origin = String(raw).replace(/\/$/, '')
+  const origin = String(raw).trim().replace(/\/$/, '')
+  if (import.meta.env.PROD && !origin) {
+    console.warn(
+      '[Career Docs] VITE_API_BASE_URL is not set. Requests go to /api on this domain and will return 404. ' +
+        'In Vercel → Settings → Environment Variables add VITE_API_BASE_URL=https://your-backend.onrender.com (no trailing slash), then redeploy.',
+    )
+  }
   return origin ? `${origin}/api` : '/api'
 }
 
@@ -35,6 +41,11 @@ async function handleResponse(r) {
   const data = isJson ? await r.json().catch(() => ({})) : await r.blob()
   if (!r.ok) {
     if (r.status === 401) setToken(null)
+    if (r.status === 404 && import.meta.env.PROD && !String(import.meta.env.VITE_API_BASE_URL || '').trim()) {
+      throw new Error(
+        'API not found (404). Set VITE_API_BASE_URL on Vercel to your Django host and redeploy.',
+      )
+    }
     throw new Error(data?.error || data?.detail || `Request failed ${r.status}`)
   }
   return data
