@@ -94,8 +94,10 @@ Frontend runs at **http://localhost:5173/**. It proxies `/api` to the Django bac
 
 1. Create a **PostgreSQL** instance on Render and copy its **Internal/External Database URL**.
 2. **New Web Service** from this repo; set **Root Directory** to `backend`.
-3. **Build command:** `bash build.sh` (Linux shell on Render; ensures `pip install`, `collectstatic`, `migrate`).
-4. **Start command:** `gunicorn docs_generator.wsgi:application --bind 0.0.0.0:$PORT`
+3. **Build command:** `bash build.sh` (`pip install`, `collectstatic` only — **not** migrations).
+4. **Start command:** `bash start.sh` — runs `migrate` against **PostgreSQL** (when `DATABASE_URL` is set), then **Gunicorn**.  
+   Alternative one-liner: `python manage.py migrate --noinput && gunicorn docs_generator.wsgi:application --bind 0.0.0.0:$PORT`  
+   First deploy showed `relation \"accounts_user\" does not exist` because migrations ran on SQLite during build, not Postgres. Use startup migrations.
 5. **Environment variables** (minimum):
 
 | Variable | Example |

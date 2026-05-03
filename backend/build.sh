@@ -4,4 +4,5 @@ set -o errexit
 
 pip install -r requirements.txt
 python manage.py collectstatic --noinput
-python manage.py migrate
+# Do not migrate here — on Render, DATABASE_URL is often unset during build (migrations
+# would hit SQLite in the builder). Migrations run in start.sh at runtime.
