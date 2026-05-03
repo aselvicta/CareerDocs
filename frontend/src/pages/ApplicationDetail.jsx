@@ -50,16 +50,18 @@ export function ApplicationDetail() {
         </div>
       </div>
       <div className="card card--detail" style={{ marginTop: '1rem' }}>
-        <table className="detail-table" style={{ width: '100%' }}>
-          <tbody>
-            <tr><td style={{ width: '8rem', color: 'var(--text-muted)' }}>Company</td><td>{app.company || '—'}</td></tr>
-            <tr><td style={{ color: 'var(--text-muted)' }}>Status</td><td><strong>{app.status_display}</strong></td></tr>
-            {app.deadline && <tr><td style={{ color: 'var(--text-muted)' }}>Deadline</td><td>{new Date(app.deadline).toLocaleDateString()}</td></tr>}
-            {app.job_url && <tr><td style={{ color: 'var(--text-muted)' }}>Link</td><td><a href={app.job_url} target="_blank" rel="noopener noreferrer">{app.job_url}</a></td></tr>}
-            {app.cv && <tr><td style={{ color: 'var(--text-muted)' }}>CV</td><td><Link to={`/cv/${app.cv}`}><FileText size={14} /> {app.cv_title || 'CV'}</Link></td></tr>}
-            {app.letter && <tr><td style={{ color: 'var(--text-muted)' }}>Cover letter</td><td><Link to={`/letters/${app.letter}`}><Mail size={14} /> {app.letter_title || 'Letter'}</Link></td></tr>}
-          </tbody>
-        </table>
+        <div className="table-responsive">
+          <table className="detail-table">
+            <tbody>
+              <tr><td className="detail-table__label">Company</td><td>{app.company || '—'}</td></tr>
+              <tr><td className="detail-table__label">Status</td><td><strong>{app.status_display}</strong></td></tr>
+              {app.deadline && <tr><td className="detail-table__label">Deadline</td><td>{new Date(app.deadline).toLocaleDateString()}</td></tr>}
+              {app.job_url && <tr><td className="detail-table__label">Link</td><td><a href={app.job_url} target="_blank" rel="noopener noreferrer" className="detail-table__break">{app.job_url}</a></td></tr>}
+              {app.cv && <tr><td className="detail-table__label">CV</td><td><Link to={`/cv/${app.cv}`}><FileText size={14} /> {app.cv_title || 'CV'}</Link></td></tr>}
+              {app.letter && <tr><td className="detail-table__label">Cover letter</td><td><Link to={`/letters/${app.letter}`}><Mail size={14} /> {app.letter_title || 'Letter'}</Link></td></tr>}
+            </tbody>
+          </table>
+        </div>
         {app.notes && (
           <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
             <h3 style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Notes</h3>

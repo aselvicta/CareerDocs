@@ -109,10 +109,10 @@ export function Profile() {
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => removeRef(i)}><Trash2 size={14} /></button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <div className="form-grid-2">
                 <input value={r.name} onChange={e => updateRef(i, 'name', e.target.value)} className="form-control" placeholder="Name" />
                 <input value={r.title} onChange={e => updateRef(i, 'title', e.target.value)} className="form-control" placeholder="Title" />
-                <input value={r.company} onChange={e => updateRef(i, 'company', e.target.value)} className="form-control" placeholder="Company" style={{ gridColumn: '1/-1' }} />
+                <input value={r.company} onChange={e => updateRef(i, 'company', e.target.value)} className="form-control form-grid-2__full" placeholder="Company" />
                 <input type="email" value={r.email} onChange={e => updateRef(i, 'email', e.target.value)} className="form-control" placeholder="Email" />
                 <input value={r.phone} onChange={e => updateRef(i, 'phone', e.target.value)} className="form-control" placeholder="Phone" />
               </div>
