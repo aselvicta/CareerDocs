@@ -2,7 +2,11 @@
 REST API for React frontend. Token auth (Header: Authorization: Token <key>).
 """
 import json
+
 from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import IntegrityError
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.http import JsonResponse
@@ -47,8 +51,8 @@ def api_register(request):
     except json.JSONDecodeError as e:
         return JsonResponse({'error': f'Invalid JSON: {e}'}, status=400)
     try:
-        email = (data.get('email') or '').strip()
-        username = (data.get('username') or '').strip() or email
+        email = (data.get('email') or '').strip().lower()
+        username = ((data.get('username') or '').strip() or email)
         password = (data.get('password') or data.get('password1') or '').strip()
         password2 = data.get('password2')
         if password2 not in (None, '') and password != str(password2).strip():
@@ -57,18 +61,36 @@ def api_register(request):
             return JsonResponse({'error': 'Email is required'}, status=400)
         if not password:
             return JsonResponse({'error': 'Password is required'}, status=400)
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email__iexact=email).exists():
             return JsonResponse({'error': 'Email already registered'}, status=400)
-        # Ensure username is unique; use email-based if collision
+        if len(username) > 150:
+            username = (email.split('@')[0] if '@' in email else email)[:150] or 'user'
+        # Ensure username is unique (email may equal username across users differently)
         base_username = username
         c = 0
         while User.objects.filter(username=username).exists():
             c += 1
-            username = f"{base_username}{c}" if c < 100 else f"{email.split('@')[0]}{c}"
+            username = (
+                f"{base_username}_{c}"
+                if c < 500
+                else f"u{c}_{email.split('@')[0]}"[:140]
+            )
+        candidate = User(username=username, email=email)
+        try:
+            validate_password(password, candidate)
+        except DjangoValidationError as e:
+            return JsonResponse({'error': ' '.join(e.messages)}, status=400)
         user = User.objects.create_user(username=username, email=email, password=password)
         token, _ = Token.objects.get_or_create(user=user)
         login(request, user)
         return JsonResponse({'user': _user_json(user), 'token': token.key})
+    except IntegrityError:
+        return JsonResponse(
+            {'error': 'This email or username is already taken. Try signing in.'},
+            status=400,
+        )
+    except DjangoValidationError as e:
+        return JsonResponse({'error': ' '.join(e.messages)}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
@@ -78,15 +100,15 @@ def api_register(request):
 def api_login(request):
     try:
         data = json.loads(request.body) if request.body else {}
-        email = data.get('email', '').strip()
+        email_raw = (data.get('email', '') or '').strip()
         password = data.get('password', '')
-        if not email or not password:
+        if not email_raw or not password:
             return JsonResponse({'error': 'email and password required'}, status=400)
-        user = authenticate(request, username=email, password=password)
-        if user is None:
+        user = User.objects.filter(email__iexact=email_raw).first()
+        if user is None or not user.check_password(password):
             return JsonResponse({'error': 'Invalid email or password'}, status=401)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         token, _ = Token.objects.get_or_create(user=user)
-        login(request, user)
         return JsonResponse({'user': _user_json(user), 'token': token.key})
     except json.JSONDecodeError as e:
         return JsonResponse({'error': f'Invalid JSON: {e}'}, status=400)
