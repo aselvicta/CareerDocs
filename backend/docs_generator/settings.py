@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from urllib.parse import urlparse
 import os
 
 import dj_database_url
@@ -35,10 +36,29 @@ SECRET_KEY = os.environ.get(
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+def _render_service_hostname():
+    """Render Web Services set this so ALLOWED_HOSTS does not miss the public hostname."""
+    host = (os.environ.get('RENDER_EXTERNAL_HOSTNAME') or '').strip()
+    if host:
+        return host
+    url = (os.environ.get('RENDER_EXTERNAL_URL') or '').strip()
+    if url:
+        parsed = urlparse(url if '://' in url else f'https://{url}')
+        return (parsed.hostname or '').strip()
+    return ''
+
+
+_hosts = []
 if os.environ.get('ALLOWED_HOSTS'):
-    ALLOWED_HOSTS = [
-        h.strip() for h in os.environ['ALLOWED_HOSTS'].split(',') if h.strip()
-    ]
+    _hosts.extend(
+        [h.strip() for h in os.environ['ALLOWED_HOSTS'].split(',') if h.strip()]
+    )
+_render = _render_service_hostname()
+if _render and _render not in _hosts:
+    _hosts.append(_render)
+
+if _hosts:
+    ALLOWED_HOSTS = list(dict.fromkeys(_hosts))
 else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:5173', '127.0.0.1:5173']
 

@@ -102,7 +102,7 @@ Frontend runs at **http://localhost:5173/**. It proxies `/api` to the Django bac
 |----------|---------|
 | `SECRET_KEY` | Long random string |
 | `DEBUG` | `False` |
-| `ALLOWED_HOSTS` | `your-service.onrender.com` |
+| `ALLOWED_HOSTS` | `your-service.onrender.com` (comma-separated if multiple). Render also exposes **`RENDER_EXTERNAL_HOSTNAME`** — settings merge this automatically so the bare backend URL does not return “Bad Request (400)” from **`DisallowedHost`**. |
 | `DATABASE_URL` | From Render Postgres |
 | `FRONTEND_URL` | `https://your-app.vercel.app` |
 | `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
