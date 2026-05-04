@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './AuthContext'
 import { ProtectedRoute } from './ProtectedRoute'
 import { Layout } from './Layout'
 import { LoadingState } from './LoadingState'
+import { Analytics } from '@vercel/analytics/react'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { OAuthCallback } from './pages/OAuthCallback'
@@ -74,6 +75,7 @@ export default function App() {
           </EmailDraftProvider>
         </ToastProvider>
       </ThemeProvider>
+      <Analytics />
     </BrowserRouter>
   )
 }
