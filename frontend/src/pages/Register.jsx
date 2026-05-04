@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Mail, Lock, User, UserPlus } from 'lucide-react'
+import { Mail, Lock, User, UserPlus, Sparkles } from 'lucide-react'
 import { AppLogo } from '../AppLogo'
 import { getApiBase } from '../api'
 import { useAuth } from '../AuthContext'
@@ -13,6 +13,7 @@ export function Register() {
   const [password1, setPassword1] = useState('')
   const [password2, setPassword2] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const { register } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
@@ -26,6 +27,7 @@ export function Register() {
       return
     }
     try {
+      setSubmitting(true)
       await register({
         email,
         username: username || email,
@@ -37,6 +39,8 @@ export function Register() {
       const msg = err?.message || 'Registration failed'
       setError(msg)
       addToast(msg, 'error')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -54,6 +58,7 @@ export function Register() {
           <button
             type="button"
             className="btn btn-google btn--full"
+            disabled={submitting}
             onClick={() => { window.location.href = `${getApiBase()}/auth/google/` }}
           >
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
@@ -62,7 +67,13 @@ export function Register() {
               <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
               <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
             </svg>
-            Continue with Google
+            {submitting ? (
+              <>
+                <Sparkles size={18} className="spin-slow" /> Loading...
+              </>
+            ) : (
+              'Continue with Google'
+            )}
           </button>
           <p className="auth-divider">or</p>
           <form onSubmit={handleSubmit} className="auth-form">
@@ -76,6 +87,7 @@ export function Register() {
                 autoComplete="username"
                 placeholder="Optional"
                 className="form-control"
+                disabled={submitting}
               />
             </div>
             <div className="form-group">
@@ -88,6 +100,7 @@ export function Register() {
                 autoComplete="email"
                 placeholder="you@example.com"
                 className="form-control"
+                disabled={submitting}
               />
             </div>
             <div className="form-group">
@@ -100,6 +113,7 @@ export function Register() {
                 autoComplete="new-password"
                 placeholder="••••••••"
                 className="form-control"
+                disabled={submitting}
               />
             </div>
             <div className="form-group">
@@ -112,10 +126,19 @@ export function Register() {
                 autoComplete="new-password"
                 placeholder="••••••••"
                 className="form-control"
+                disabled={submitting}
               />
             </div>
-            <button type="submit" className="btn btn-primary btn--full">
-              <UserPlus size={18} /> Create account
+            <button type="submit" className="btn btn-primary btn--full" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Sparkles size={18} className="spin-slow" /> Creating account...
+                </>
+              ) : (
+                <>
+                  <UserPlus size={18} /> Create account
+                </>
+              )}
             </button>
           </form>
           <p className="auth-footer">Already have an account? <Link to="/login">Sign in</Link></p>

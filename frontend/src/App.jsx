@@ -5,6 +5,7 @@ import { EmailDraftProvider } from './EmailDraftContext'
 import { AuthProvider, useAuth } from './AuthContext'
 import { ProtectedRoute } from './ProtectedRoute'
 import { Layout } from './Layout'
+import { LoadingState } from './LoadingState'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { OAuthCallback } from './pages/OAuthCallback'
@@ -29,7 +30,7 @@ function AppRoutes() {
   const { user, loading } = useAuth()
   const location = useLocation()
   const skipAuthLoading = location.pathname === '/oauth/callback'
-  if (loading && !skipAuthLoading) return <div className="app-loading">Loading...</div>
+  if (loading && !skipAuthLoading) return <LoadingState />
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
