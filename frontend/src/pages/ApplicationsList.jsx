@@ -1,20 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Briefcase, Plus, Pencil, Trash2, ExternalLink, FileText, Mail } from 'lucide-react'
 import { api } from '../api'
 import { useToast } from '../ToastContext'
+import { usePagedList } from '../usePagedList'
+import { Pagination } from '../Pagination'
 
 const STATUS_COLORS = { draft: 'var(--text-muted)', applied: 'var(--primary)', interview: 'var(--primary)', offer: 'var(--success)', rejected: 'var(--danger)', withdrawn: 'var(--text-muted)' }
 
 export function ApplicationsList() {
-  const [apps, setApps] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { items: apps, page, pages, total, setPage, reload, loading, initialLoading } = usePagedList('/applications/')
   const [deleting, setDeleting] = useState(null)
   const { addToast } = useToast()
 
-  useEffect(() => {
-    api.get('/applications/').then(data => setApps(Array.isArray(data) ? data : [])).catch(() => setApps([])).finally(() => setLoading(false))
-  }, [])
 
   async function handleDelete(id, e) {
     e.preventDefault()
@@ -22,7 +20,7 @@ export function ApplicationsList() {
     setDeleting(id)
     try {
       await api.delete(`/applications/${id}/`)
-      setApps(prev => prev.filter(a => a.id !== id))
+      reload()
       addToast('Application removed.', 'success')
     } catch (err) {
       addToast(err?.message || 'Delete failed.', 'error')
@@ -31,7 +29,7 @@ export function ApplicationsList() {
     }
   }
 
-  if (loading) return <div className="page"><div className="loading-state"><p>Loading...</p></div></div>
+  if (initialLoading) return <div className="page"><div className="loading-state"><p>Loading...</p></div></div>
 
   return (
     <div className="page">
@@ -41,7 +39,7 @@ export function ApplicationsList() {
       </div>
       <p className="muted">Track your applications with job title, company, linked CV and cover letter, status, and notes.</p>
       {apps.length ? (
-        <div className="card-list" style={{ marginTop: '1rem' }}>
+        <div className={`card-list${loading ? ' card-list--busy' : ''}`} style={{ marginTop: '1rem' }}>
           {apps.map(a => (
             <article key={a.id} className="card card--hover">
               <div className="card__main">
@@ -81,6 +79,7 @@ export function ApplicationsList() {
           <Link to="/applications/new" className="btn btn-primary">Add your first application</Link>
         </div>
       )}
+      <Pagination page={page} pages={pages} total={total} onPage={setPage} noun="applications" busy={loading} />
     </div>
   )
 }

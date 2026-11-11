@@ -4,6 +4,7 @@ All admin endpoints require user.is_staff (DRF IsAdminUser).
 """
 from datetime import datetime, time, timedelta
 
+from django.core.cache import cache
 from django.db.models import Count, F, IntegerField, Max, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce, TruncDate
 from django.shortcuts import get_object_or_404
@@ -141,6 +142,20 @@ def api_track(request):
 @permission_classes([IsAdminUser])
 def admin_overview(request):
     days = _int(request.query_params.get('days'), 30, 1, 365)
+    cache_key = f'admin_overview:{days}'
+    if request.query_params.get('refresh') != '1':
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+    data = _build_overview(days)
+    cache.set(cache_key, data, OVERVIEW_TTL)
+    return Response(data)
+
+
+OVERVIEW_TTL = 60  # seconds; the dashboard's refresh button bypasses it
+
+
+def _build_overview(days):
     now = timezone.now()
     today = timezone.localdate()
     start_date = today - timedelta(days=days - 1)
@@ -189,7 +204,7 @@ def admin_overview(request):
         .annotate(count=Count('pk')).order_by('-count')[:8]
     )
 
-    return Response({
+    return {
         'days': days,
         'generated_at': _iso(now),
         'totals': {
@@ -233,7 +248,7 @@ def admin_overview(request):
         'letter_types': _breakdown(Letter.objects.all(), 'letter_type'),
         'application_statuses': _breakdown(Application.objects.all(), 'status'),
         'recent': [_event_json(e) for e in ActivityEvent.objects.select_related('user')[:15]],
-    })
+    }
 
 
 # ---------------------------------------------------------------- users
@@ -365,8 +380,10 @@ def admin_activity(request):
     if p.get('failed') in ('1', 'true'):
         qs = qs.filter(status_code__gte=400)
     data = _paginate(request, qs, _event_json, size=50)
-    data['event_types'] = list(
-        ActivityEvent.objects.order_by().values_list('event', flat=True).distinct().order_by('event')
+    data['event_types'] = cache.get_or_set(
+        'admin_event_types',
+        lambda: list(ActivityEvent.objects.order_by().values_list('event', flat=True).distinct().order_by('event')),
+        300,
     )
     return Response(data)
 

@@ -60,3 +60,30 @@ class LetterSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
         read_only_fields = ['created_at', 'updated_at']
+
+
+# ---- Lightweight list serializers: only what list pages / pickers display ----
+class CVListSerializer(serializers.ModelSerializer):
+    template_display = serializers.CharField(source='get_template_display', read_only=True)
+    shared = serializers.SerializerMethodField()
+
+    def get_shared(self, obj):
+        return bool(obj.share_token)
+
+    class Meta:
+        model = CV
+        fields = ['id', 'title', 'template', 'template_display', 'full_name', 'shared', 'created_at', 'updated_at']
+        read_only_fields = fields
+
+    LIST_ONLY = ('id', 'title', 'template', 'full_name', 'share_token', 'created_at', 'updated_at', 'user_id')
+
+
+class LetterListSerializer(serializers.ModelSerializer):
+    letter_type_display = serializers.CharField(source='get_letter_type_display', read_only=True)
+
+    class Meta:
+        model = Letter
+        fields = ['id', 'letter_type', 'letter_type_display', 'title', 'recipient_name', 'company', 'created_at', 'updated_at']
+        read_only_fields = fields
+
+    LIST_ONLY = ('id', 'letter_type', 'title', 'recipient_name', 'company', 'created_at', 'updated_at', 'user_id')

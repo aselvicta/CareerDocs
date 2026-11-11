@@ -1,20 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FileText, Plus, Pencil, FileDown, Trash2, LayoutTemplate, Mail } from 'lucide-react'
-import { api, downloadExport } from '../api'
+import { downloadExport } from '../api'
 import { useToast } from '../ToastContext'
 import { SendEmailModal } from '../SendEmailModal'
+import { usePagedList } from '../usePagedList'
+import { Pagination } from '../Pagination'
 
 export function CVList() {
-  const [cvs, setCvs] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { items: cvs, page, pages, total, setPage, loading, initialLoading } = usePagedList('/cvs/')
   const [downloading, setDownloading] = useState(null)
   const [emailModal, setEmailModal] = useState({ open: false, id: null, title: '' })
   const { addToast } = useToast()
 
-  useEffect(() => {
-    api.get('/cvs/').then(data => setCvs(Array.isArray(data) ? data : [])).catch(() => {}).finally(() => setLoading(false))
-  }, [])
 
   async function handleExport(id, format, filename) {
     const key = `${id}-${format}`
@@ -29,7 +27,7 @@ export function CVList() {
     }
   }
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="page">
         <div className="loading-state"><p>Loading...</p></div>
@@ -46,7 +44,7 @@ export function CVList() {
         </Link>
       </div>
       {cvs.length ? (
-        <div className="card-list">
+        <div className={`card-list${loading ? ' card-list--busy' : ''}`}>
           {cvs.map(cv => (
             <article key={cv.id} className="card card--hover">
               <div className="card__main">
@@ -88,6 +86,7 @@ export function CVList() {
           <Link to="/cv/templates" className="btn btn-primary">Choose a template to get started</Link>
         </div>
       )}
+      <Pagination page={page} pages={pages} total={total} onPage={setPage} noun="CVs" busy={loading} />
       <SendEmailModal
         open={emailModal.open}
         onClose={() => setEmailModal({ open: false, id: null, title: '' })}

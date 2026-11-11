@@ -21,7 +21,8 @@ const METRICS = [
 export function AdminOverview() {
   const [days, setDays] = useState(30)
   const [metric, setMetric] = useState('page_views')
-  const { data, error, loading, reload } = useAdminData(`/admin/overview/?days=${days}`)
+  const [bust, setBust] = useState(0)
+  const { data, error, loading, reload } = useAdminData(`/admin/overview/?days=${days}${bust ? `&refresh=1&t=${bust}` : ''}`)
   const navigate = useNavigate()
 
   return (
@@ -36,12 +37,12 @@ export function AdminOverview() {
         <div className="admin-filters">
           <div className="segmented" role="group" aria-label="Date range">
             {RANGES.map(r => (
-              <button key={r} type="button" className={r === days ? 'is-active' : ''} aria-pressed={r === days} onClick={() => setDays(r)}>
+              <button key={r} type="button" className={r === days ? 'is-active' : ''} aria-pressed={r === days} onClick={() => { setDays(r); setBust(0) }}>
                 {r === 365 ? '1y' : `${r}d`}
               </button>
             ))}
           </div>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => reload()} aria-label="Refresh">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setBust(Date.now())} aria-label="Refresh">
             <RefreshCw size={16} />
           </button>
         </div>

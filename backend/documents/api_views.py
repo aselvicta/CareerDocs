@@ -17,7 +17,9 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from accounts.models import User, Profile
 from .models import CV, Letter, CVRevision, LetterRevision, Application
-from .serializers import CVSerializer, LetterSerializer, ApplicationSerializer
+from .serializers import (
+    CVSerializer, LetterSerializer, ApplicationSerializer, CVListSerializer, LetterListSerializer,
+)
 from .services.deepseek import (
     deepseek_enhance_text,
     deepseek_suggest_alternatives,
@@ -39,6 +41,42 @@ def _user_json(user):
         'username': getattr(user, 'username', ''),
         'is_staff': bool(getattr(user, 'is_staff', False)),
     }
+
+
+_HEAVY_CV_FIELDS = (
+    'summary', 'experience', 'education', 'skills', 'experience_structured', 'education_structured',
+    'skills_structured', 'certifications', 'projects', 'languages', 'awards', 'references',
+)
+
+
+def _list_response(request, qs, serializer_cls, **ser_kwargs):
+    """
+    List helper. Default: plain array (backwards compatible).
+    ?limit=N  -> first N items (array).
+    ?page=N[&page_size=M] -> {results, page, pages, total, page_size}.
+    """
+    params = request.query_params
+
+    def _int(name, default, lo, hi):
+        try:
+            return max(lo, min(hi, int(params.get(name))))
+        except (TypeError, ValueError):
+            return default
+
+    qs = qs.order_by(*(qs.query.order_by or qs.model._meta.ordering), '-pk')
+    if params.get('page'):
+        size = _int('page_size', 12, 1, 100)
+        total = qs.count()
+        pages = max(1, -(-total // size))
+        page = _int('page', 1, 1, pages)
+        rows = qs[(page - 1) * size: page * size]
+        return Response({
+            'results': serializer_cls(rows, many=True, **ser_kwargs).data,
+            'page': page, 'pages': pages, 'total': total, 'page_size': size,
+        })
+    if params.get('limit'):
+        qs = qs[:_int('limit', 10, 1, 100)]
+    return Response(serializer_cls(qs, many=True, **ser_kwargs).data)
 
 
 # ---------- Auth ----------
@@ -223,8 +261,8 @@ def _letter_snapshot(letter):
 @permission_classes([IsAuthenticated])
 def api_cv_list_create(request):
     if request.method == 'GET':
-        cvs = CV.objects.filter(user=request.user)
-        return Response(CVSerializer(cvs, many=True, context={'request': request}).data)
+        cvs = CV.objects.filter(user=request.user).only(*CVListSerializer.LIST_ONLY)
+        return _list_response(request, cvs, CVListSerializer)
     # POST
     ser = CVSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
@@ -368,8 +406,8 @@ def api_cv_public(request, token):
 @permission_classes([IsAuthenticated])
 def api_letter_list_create(request):
     if request.method == 'GET':
-        letters = Letter.objects.filter(user=request.user)
-        return Response(LetterSerializer(letters, many=True).data)
+        letters = Letter.objects.filter(user=request.user).only(*LetterListSerializer.LIST_ONLY)
+        return _list_response(request, letters, LetterListSerializer)
     ser = LetterSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
     letter = ser.save(user=request.user)
@@ -605,8 +643,12 @@ def api_ai_ats(request):
 @permission_classes([IsAuthenticated])
 def api_applications(request):
     if request.method == 'GET':
-        apps = Application.objects.filter(user=request.user).select_related('cv', 'letter')
-        return Response(ApplicationSerializer(apps, many=True).data)
+        apps = (
+            Application.objects.filter(user=request.user)
+            .select_related('cv', 'letter')
+            .defer(*[f'cv__{f}' for f in _HEAVY_CV_FIELDS], 'letter__body')
+        )
+        return _list_response(request, apps, ApplicationSerializer)
     data = request.data.copy()
     cv_id = data.get('cv')
     letter_id = data.get('letter')

@@ -9,7 +9,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([api.get('/cvs/'), api.get('/letters/')])
+    Promise.all([api.get('/cvs/?limit=10'), api.get('/letters/?limit=10')])
       .then(([cvsData, lettersData]) => {
         setCvs(Array.isArray(cvsData) ? cvsData.slice(0, 10) : [])
         setLetters(Array.isArray(lettersData) ? lettersData.slice(0, 10) : [])

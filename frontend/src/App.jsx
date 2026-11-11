@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ThemeProvider } from './ThemeContext'
 import { ToastProvider } from './ToastContext'
@@ -10,30 +10,35 @@ import { LoadingState } from './LoadingState'
 import { Analytics } from '@vercel/analytics/react'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
-import { OAuthCallback } from './pages/OAuthCallback'
-import { Dashboard } from './pages/Dashboard'
-import { CVList } from './pages/CVList'
-import { CVTemplates } from './pages/CVTemplates'
-import { CVForm } from './pages/CVForm'
-import { CVDetail } from './pages/CVDetail'
-import { CVDelete } from './pages/CVDelete'
-import { LetterList } from './pages/LetterList'
-import { LetterForm } from './pages/LetterForm'
-import { LetterDetail } from './pages/LetterDetail'
-import { LetterDelete } from './pages/LetterDelete'
-import { EmailComposer } from './pages/EmailComposer'
-import { Profile } from './pages/Profile'
-import { CVPublic } from './pages/CVPublic'
-import { ApplicationsList } from './pages/ApplicationsList'
-import { ApplicationDetail } from './pages/ApplicationDetail'
-import { ApplicationForm } from './pages/ApplicationForm'
+import { Landing } from './pages/Landing'
 import { trackPageView } from './analytics'
-import { AdminGate } from './admin/AdminShell'
-import { AdminOverview } from './admin/AdminOverview'
-import { AdminUsers } from './admin/AdminUsers'
-import { AdminUserDetail } from './admin/AdminUserDetail'
-import { AdminActivity } from './admin/AdminActivity'
-import { AdminContent } from './admin/AdminContent'
+
+// Route-level code splitting: each page is its own chunk, fetched on first visit.
+// The admin console is never downloaded by regular users.
+const named = (loader, name) => lazy(() => loader().then(m => ({ default: m[name] })))
+const OAuthCallback = named(() => import('./pages/OAuthCallback'), 'OAuthCallback')
+const Dashboard = named(() => import('./pages/Dashboard'), 'Dashboard')
+const CVList = named(() => import('./pages/CVList'), 'CVList')
+const CVTemplates = named(() => import('./pages/CVTemplates'), 'CVTemplates')
+const CVForm = named(() => import('./pages/CVForm'), 'CVForm')
+const CVDetail = named(() => import('./pages/CVDetail'), 'CVDetail')
+const CVDelete = named(() => import('./pages/CVDelete'), 'CVDelete')
+const LetterList = named(() => import('./pages/LetterList'), 'LetterList')
+const LetterForm = named(() => import('./pages/LetterForm'), 'LetterForm')
+const LetterDetail = named(() => import('./pages/LetterDetail'), 'LetterDetail')
+const LetterDelete = named(() => import('./pages/LetterDelete'), 'LetterDelete')
+const EmailComposer = named(() => import('./pages/EmailComposer'), 'EmailComposer')
+const Profile = named(() => import('./pages/Profile'), 'Profile')
+const CVPublic = named(() => import('./pages/CVPublic'), 'CVPublic')
+const ApplicationsList = named(() => import('./pages/ApplicationsList'), 'ApplicationsList')
+const ApplicationDetail = named(() => import('./pages/ApplicationDetail'), 'ApplicationDetail')
+const ApplicationForm = named(() => import('./pages/ApplicationForm'), 'ApplicationForm')
+const AdminGate = named(() => import('./admin/AdminShell'), 'AdminGate')
+const AdminOverview = named(() => import('./admin/AdminOverview'), 'AdminOverview')
+const AdminUsers = named(() => import('./admin/AdminUsers'), 'AdminUsers')
+const AdminUserDetail = named(() => import('./admin/AdminUserDetail'), 'AdminUserDetail')
+const AdminActivity = named(() => import('./admin/AdminActivity'), 'AdminActivity')
+const AdminContent = named(() => import('./admin/AdminContent'), 'AdminContent')
 
 function PageTracker() {
   const { pathname } = useLocation()
@@ -50,6 +55,7 @@ function AppRoutes() {
   const skipAuthLoading = location.pathname === '/oauth/callback'
   if (loading && !skipAuthLoading) return <LoadingState />
   return (
+    <Suspense fallback={<LoadingState />}>
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
@@ -86,6 +92,7 @@ function AppRoutes() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }
 

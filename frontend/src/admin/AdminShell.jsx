@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import {
   BarChart3, Users, Activity, FolderOpen, ShieldCheck, ShieldX, ArrowLeftRight, LogOut, Sun, Moon,
@@ -88,7 +89,9 @@ function AdminLayout() {
       </aside>
       <main className="admin-main">
         <div className="admin-page">
-          <Outlet />
+          <Suspense fallback={<AdminLoading />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
     </div>

@@ -68,6 +68,8 @@ class TrackingTests(TestCase):
 
 class AdminApiTests(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.admin = User.objects.create_user(username='a', email='admin@example.com', password='x', is_staff=True)
         self.user = User.objects.create_user(username='u', email='u@example.com', password='x')
         self.cv = CV.objects.create(user=self.user, title='CV 1', share_token='tok123')
@@ -89,6 +91,10 @@ class AdminApiTests(TestCase):
         self.assertEqual(len(r.data['series']), 7)
         self.assertEqual(r.data['series'][-1]['page_views'], 1)
         self.assertEqual(r.data['top_users'][0]['email'], 'u@example.com')
+        # cached for a minute; ?refresh=1 bypasses
+        ActivityEvent.objects.create(user=self.user, event='page.view', path='/x', visitor_id='v2')
+        self.assertEqual(_client(self.admin).get('/api/admin/overview/?days=7').data['period']['page_views'], 1)
+        self.assertEqual(_client(self.admin).get('/api/admin/overview/?days=7&refresh=1').data['period']['page_views'], 2)
 
     def test_users_list_and_detail(self):
         c = _client(self.admin)
@@ -158,3 +164,41 @@ class AdminEmailsTests(TestCase):
             call_command('ensure_admins', stdout=out)
         self.assertTrue(User.objects.get(email='boss@example.com').is_superuser)
         self.assertIn('later@example.com: no account yet', out.getvalue())
+
+
+class ClientListPaginationTests(TestCase):
+    def setUp(self):
+        from documents.models import Letter
+        self.user = User.objects.create_user(username='p', email='p@example.com', password='x')
+        other = User.objects.create_user(username='o', email='o@example.com', password='x')
+        for i in range(15):
+            CV.objects.create(user=self.user, title=f'CV {i}', summary='long text ' * 200)
+        CV.objects.create(user=other, title='not mine')
+        Letter.objects.create(user=self.user, letter_type='cover', title='L', body='body ' * 500)
+        self.c = _client(self.user)
+
+    def test_default_is_full_array_of_light_rows(self):
+        r = self.c.get('/api/cvs/')
+        self.assertIsInstance(r.data, list)
+        self.assertEqual(len(r.data), 15)
+        self.assertNotIn('summary', r.data[0])
+        self.assertEqual(r.data[0]['title'], 'CV 14')  # newest first
+
+    def test_limit(self):
+        self.assertEqual(len(self.c.get('/api/cvs/?limit=5').data), 5)
+
+    def test_page(self):
+        r = self.c.get('/api/cvs/?page=2&page_size=12')
+        self.assertEqual((r.data['page'], r.data['pages'], r.data['total']), (2, 2, 15))
+        self.assertEqual(len(r.data['results']), 3)
+        r = self.c.get('/api/cvs/?page=99')  # clamps to last page
+        self.assertEqual(r.data['page'], 2)
+
+    def test_letters_list_has_no_body_but_detail_does(self):
+        rows = self.c.get('/api/letters/').data
+        self.assertNotIn('body', rows[0])
+        self.assertIn('body', self.c.get(f"/api/letters/{rows[0]['id']}/").data)
+
+    def test_gzip(self):
+        r = self.c.get('/api/cvs/', HTTP_ACCEPT_ENCODING='gzip')
+        self.assertEqual(r.get('Content-Encoding'), 'gzip')

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -20,6 +20,7 @@ import { useAuth } from './AuthContext'
 import { useTheme } from './ThemeContext'
 import { EmailAssistant } from './EmailAssistant'
 import { HelpChat } from './HelpChat'
+import { LoadingState } from './LoadingState'
 
 const BREAKPOINT_NAV = '(min-width: 896px)'
 
@@ -137,7 +138,9 @@ export function Layout() {
         </div>
       </header>
       <main className="container">
-        <Outlet />
+        <Suspense fallback={<LoadingState />}>
+          <Outlet />
+        </Suspense>
       </main>
       <EmailAssistant />
       <HelpChat />

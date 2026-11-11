@@ -1,20 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, Plus, Pencil, FileDown, Trash2, Send } from 'lucide-react'
-import { api, downloadExport } from '../api'
+import { downloadExport } from '../api'
 import { useToast } from '../ToastContext'
 import { SendEmailModal } from '../SendEmailModal'
+import { usePagedList } from '../usePagedList'
+import { Pagination } from '../Pagination'
 
 export function LetterList() {
-  const [letters, setLetters] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { items: letters, page, pages, total, setPage, loading, initialLoading } = usePagedList('/letters/')
   const [downloading, setDownloading] = useState(null)
   const [emailModal, setEmailModal] = useState({ open: false, id: null, title: '' })
   const { addToast } = useToast()
 
-  useEffect(() => {
-    api.get('/letters/').then(data => setLetters(Array.isArray(data) ? data : [])).catch(() => {}).finally(() => setLoading(false))
-  }, [])
 
   async function handleExport(id, format, filename) {
     const key = `${id}-${format}`
@@ -29,7 +27,7 @@ export function LetterList() {
     }
   }
 
-  if (loading) return <div className="page"><div className="loading-state"><p>Loading...</p></div></div>
+  if (initialLoading) return <div className="page"><div className="loading-state"><p>Loading...</p></div></div>
 
   return (
     <div className="page">
@@ -38,7 +36,7 @@ export function LetterList() {
         <Link to="/letters/new" className="btn btn-primary"><Plus size={18} /> New letter</Link>
       </div>
       {letters.length ? (
-        <div className="card-list">
+        <div className={`card-list${loading ? ' card-list--busy' : ''}`}>
           {letters.map(l => (
             <article key={l.id} className="card card--hover">
               <div className="card__main">
@@ -70,6 +68,7 @@ export function LetterList() {
           <Link to="/letters/new" className="btn btn-primary">Create a letter</Link>
         </div>
       )}
+      <Pagination page={page} pages={pages} total={total} onPage={setPage} noun="letters" busy={loading} />
       <SendEmailModal
         open={emailModal.open}
         onClose={() => setEmailModal({ open: false, id: null, title: '' })}

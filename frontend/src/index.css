@@ -1146,3 +1146,8 @@ h1, h2, h3 { margin-top: 0; }
 }
 .revision-item span { color: var(--text-muted); }
 .btn--sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+
+/* ----- Pagination ----- */
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+.pager__info { font-size: 0.875rem; }
+.card-list--busy { opacity: 0.6; transition: opacity var(--transition); pointer-events: none; }
