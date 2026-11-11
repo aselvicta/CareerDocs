@@ -28,9 +28,15 @@ export function AuthProvider({ children }) {
     loadUser()
   }, [])
 
-  async function login(email, password) {
+  async function login(email, password, { requireStaff = false } = {}) {
     const data = await api.post('/auth/login/', { email, password })
     setToken(data.token)
+    if (requireStaff && !data.user?.is_staff) {
+      // Valid credentials but not an admin: don't leave them half signed in.
+      await api.post('/auth/logout/').catch(() => {})
+      setToken(null)
+      throw new Error('This account does not have admin access.')
+    }
     setUser(data.user)
     return data
   }

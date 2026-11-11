@@ -28,7 +28,7 @@ import { ApplicationsList } from './pages/ApplicationsList'
 import { ApplicationDetail } from './pages/ApplicationDetail'
 import { ApplicationForm } from './pages/ApplicationForm'
 import { trackPageView } from './analytics'
-import { AdminShell } from './admin/AdminShell'
+import { AdminGate } from './admin/AdminShell'
 import { AdminOverview } from './admin/AdminOverview'
 import { AdminUsers } from './admin/AdminUsers'
 import { AdminUserDetail } from './admin/AdminUserDetail'
@@ -55,6 +55,15 @@ function AppRoutes() {
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/view/cv/:token" element={<CVPublic />} />
+      {/* Admin console: separate layout + its own login, outside the client app shell */}
+      <Route path="/admin" element={<AdminGate />}>
+        <Route index element={<AdminOverview />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="users/:id" element={<AdminUserDetail />} />
+        <Route path="activity" element={<AdminActivity />} />
+        <Route path="content" element={<AdminContent />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Route>
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="cv" element={<CVList />} />
@@ -74,13 +83,6 @@ function AppRoutes() {
         <Route path="applications/new" element={<ApplicationForm />} />
         <Route path="applications/:id" element={<ApplicationDetail />} />
         <Route path="applications/:id/edit" element={<ApplicationForm />} />
-        <Route path="admin" element={<AdminShell />}>
-          <Route index element={<AdminOverview />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="users/:id" element={<AdminUserDetail />} />
-          <Route path="activity" element={<AdminActivity />} />
-          <Route path="content" element={<AdminContent />} />
-        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
