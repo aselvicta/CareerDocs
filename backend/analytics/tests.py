@@ -125,3 +125,36 @@ class AdminApiTests(TestCase):
         r = _client(self.admin).get('/api/admin/activity/?exclude_page_views=1')
         self.assertEqual([e['event'] for e in r.data['results']], ['cv.export_pdf'])
         self.assertIn('page.view', r.data['event_types'])
+
+
+class AdminEmailsTests(TestCase):
+    @staticmethod
+    def _login(email, password):
+        return APIClient().post('/api/auth/login/', {'email': email, 'password': password}, format='json')
+
+    def test_listed_account_promoted_on_login(self):
+        from django.test import override_settings
+        User.objects.create_user(username='v', email='Boss@Example.com', password='Str0ng-pass!')
+        with override_settings(ADMIN_EMAILS={'boss@example.com'}):
+            r = self._login('boss@example.com', 'Str0ng-pass!')
+        self.assertTrue(r.json()['user']['is_staff'])
+        u = User.objects.get(email__iexact='boss@example.com')
+        self.assertTrue(u.is_staff and u.is_superuser)
+
+    def test_unlisted_account_not_promoted(self):
+        from django.test import override_settings
+        User.objects.create_user(username='n', email='normal@example.com', password='Str0ng-pass!')
+        with override_settings(ADMIN_EMAILS={'boss@example.com'}):
+            r = self._login('normal@example.com', 'Str0ng-pass!')
+        self.assertFalse(r.json()['user']['is_staff'])
+
+    def test_ensure_admins_command(self):
+        from io import StringIO
+        from django.core.management import call_command
+        from django.test import override_settings
+        User.objects.create_user(username='v', email='boss@example.com', password='x')
+        out = StringIO()
+        with override_settings(ADMIN_EMAILS={'boss@example.com', 'later@example.com'}):
+            call_command('ensure_admins', stdout=out)
+        self.assertTrue(User.objects.get(email='boss@example.com').is_superuser)
+        self.assertIn('later@example.com: no account yet', out.getvalue())
