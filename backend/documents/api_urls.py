@@ -1,6 +1,7 @@
 from django.urls import path
 from . import api_views
 from . import google_oauth
+from analytics import views as analytics_views
 
 urlpatterns = [
     path('auth/csrf/', api_views.api_csrf),
@@ -42,4 +43,13 @@ urlpatterns = [
     path('applications/', api_views.api_applications),
     path('applications/<int:pk>/', api_views.api_application_detail),
     path('compose-email/', api_views.api_compose_email),
+    # Analytics: page-view tracking + staff-only admin dashboard
+    path('track/', analytics_views.api_track),
+    path('admin/overview/', analytics_views.admin_overview),
+    path('admin/users/', analytics_views.admin_users),
+    path('admin/users/<int:pk>/', analytics_views.admin_user_detail),
+    path('admin/activity/', analytics_views.admin_activity),
+    path('admin/content/<str:kind>/', analytics_views.admin_content),
+    path('admin/content/<str:kind>/<int:pk>/', analytics_views.admin_content_detail),
+    path('admin/cvs/<int:pk>/revoke-share/', analytics_views.admin_revoke_share),
 ]

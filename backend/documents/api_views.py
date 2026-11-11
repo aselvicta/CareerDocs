@@ -33,7 +33,12 @@ from .services.export_docx import build_cv_docx, build_letter_docx
 
 
 def _user_json(user):
-    return {'id': user.pk, 'email': user.email, 'username': getattr(user, 'username', '')}
+    return {
+        'id': user.pk,
+        'email': user.email,
+        'username': getattr(user, 'username', ''),
+        'is_staff': bool(getattr(user, 'is_staff', False)),
+    }
 
 
 # ---------- Auth ----------
@@ -107,6 +112,8 @@ def api_login(request):
         user = User.objects.filter(email__iexact=email_raw).first()
         if user is None or not user.check_password(password):
             return JsonResponse({'error': 'Invalid email or password'}, status=401)
+        if not user.is_active:
+            return JsonResponse({'error': 'This account has been disabled.'}, status=403)
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         token, _ = Token.objects.get_or_create(user=user)
         return JsonResponse({'user': _user_json(user), 'token': token.key})

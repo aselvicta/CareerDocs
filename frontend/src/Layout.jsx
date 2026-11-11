@@ -13,6 +13,7 @@ import {
   Briefcase,
   Menu,
   X,
+  ShieldCheck,
 } from 'lucide-react'
 import { AppLogo } from './AppLogo'
 import { useAuth } from './AuthContext'
@@ -72,6 +73,11 @@ export function Layout() {
       <Link to="/profile" className={navLinkClass} onClick={closeMenu}>
         <Settings size={18} aria-hidden /> Profile
       </Link>
+      {user?.is_staff && (
+        <Link to="/admin" className={navLinkClass} onClick={closeMenu}>
+          <ShieldCheck size={18} aria-hidden /> Admin
+        </Link>
+      )}
     </>
   )
 

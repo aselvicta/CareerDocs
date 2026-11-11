@@ -13,6 +13,7 @@ from django.views.decorators.http import require_GET
 from rest_framework.authtoken.models import Token
 
 from accounts.models import User, Profile
+from analytics.tracking import record
 
 GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
@@ -121,7 +122,10 @@ def google_oauth_callback(request):
     full_name = (info.get('name') or f'{given} {family}').strip()[:200]
 
     user = User.objects.filter(email__iexact=email_norm).first()
-    if user is None:
+    is_new = user is None
+    if user is not None and not user.is_active:
+        return _redirect_error('account_disabled')
+    if is_new:
         # Sign up: first Google login creates the account.
         user = User(
             username=_unique_username(email_norm),
@@ -145,5 +149,7 @@ def google_oauth_callback(request):
 
     token, _ = Token.objects.get_or_create(user=user)
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    record(request, 'auth.google_signup' if is_new else 'auth.google_login', user=user,
+           path=request.path[:300], method='GET', status_code=302)
     # Token goes in the URL fragment so it is never sent to servers or logged.
     return HttpResponseRedirect(f'{next_url}#token={urllib.parse.quote(token.key, safe="")}')

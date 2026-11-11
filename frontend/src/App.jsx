@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ThemeProvider } from './ThemeContext'
 import { ToastProvider } from './ToastContext'
@@ -26,6 +27,22 @@ import { CVPublic } from './pages/CVPublic'
 import { ApplicationsList } from './pages/ApplicationsList'
 import { ApplicationDetail } from './pages/ApplicationDetail'
 import { ApplicationForm } from './pages/ApplicationForm'
+import { trackPageView } from './analytics'
+import { AdminShell } from './admin/AdminShell'
+import { AdminOverview } from './admin/AdminOverview'
+import { AdminUsers } from './admin/AdminUsers'
+import { AdminUserDetail } from './admin/AdminUserDetail'
+import { AdminActivity } from './admin/AdminActivity'
+import { AdminContent } from './admin/AdminContent'
+
+function PageTracker() {
+  const { pathname } = useLocation()
+  const { loading } = useAuth()
+  useEffect(() => {
+    if (!loading) trackPageView(pathname)
+  }, [pathname, loading])
+  return null
+}
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -57,6 +74,13 @@ function AppRoutes() {
         <Route path="applications/new" element={<ApplicationForm />} />
         <Route path="applications/:id" element={<ApplicationDetail />} />
         <Route path="applications/:id/edit" element={<ApplicationForm />} />
+        <Route path="admin" element={<AdminShell />}>
+          <Route index element={<AdminOverview />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="users/:id" element={<AdminUserDetail />} />
+          <Route path="activity" element={<AdminActivity />} />
+          <Route path="content" element={<AdminContent />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -70,6 +94,7 @@ export default function App() {
         <ToastProvider>
           <EmailDraftProvider>
             <AuthProvider>
+              <PageTracker />
               <AppRoutes />
             </AuthProvider>
           </EmailDraftProvider>
