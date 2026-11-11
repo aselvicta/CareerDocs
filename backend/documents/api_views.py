@@ -7,6 +7,10 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
+from django.db.models import Count, Q
+from django.utils import timezone
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import parser_classes
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.http import JsonResponse
@@ -32,6 +36,9 @@ from .services.deepseek import (
 )
 from .services.export_pdf import build_cv_pdf, build_letter_pdf
 from .services.export_docx import build_cv_docx, build_letter_docx
+from .services import cv_import
+from .catalog import TEMPLATE_IDS
+from .serializers import CVPreviewSerializer
 
 
 def _user_json(user):
@@ -45,8 +52,22 @@ def _user_json(user):
 
 _HEAVY_CV_FIELDS = (
     'summary', 'experience', 'education', 'skills', 'experience_structured', 'education_structured',
-    'skills_structured', 'certifications', 'projects', 'languages', 'awards', 'references',
+    'skills_structured', 'certifications', 'projects', 'languages', 'awards', 'references', 'photo',
 )
+
+_SORTS = {'updated': '-updated_at', 'created': '-created_at', 'title': 'title', 'oldest': 'updated_at'}
+
+
+def _search_sort(request, qs, fields):
+    """Apply ?q= (case-insensitive contains over `fields`) and ?sort= (updated|created|title|oldest)."""
+    q = (request.query_params.get('q') or '').strip()
+    if q:
+        cond = Q()
+        for f in fields:
+            cond |= Q(**{f'{f}__icontains': q})
+        qs = qs.filter(cond)
+    sort = _SORTS.get(request.query_params.get('sort') or '')
+    return qs.order_by(sort) if sort else qs
 
 
 def _list_response(request, qs, serializer_cls, **ser_kwargs):
@@ -268,8 +289,11 @@ def _letter_snapshot(letter):
 @permission_classes([IsAuthenticated])
 def api_cv_list_create(request):
     if request.method == 'GET':
-        cvs = CV.objects.filter(user=request.user).only(*CVListSerializer.LIST_ONLY)
-        return _list_response(request, cvs, CVListSerializer)
+        cvs = _search_sort(request, CV.objects.filter(user=request.user), ('title', 'full_name', 'headline'))
+        if request.query_params.get('preview'):
+            # Everything a thumbnail needs, minus the photo (kept out of lists for size).
+            return _list_response(request, cvs.defer('photo'), CVPreviewSerializer)
+        return _list_response(request, cvs.only(*CVListSerializer.LIST_ONLY), CVListSerializer)
     # POST
     ser = CVSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
@@ -413,8 +437,10 @@ def api_cv_public(request, token):
 @permission_classes([IsAuthenticated])
 def api_letter_list_create(request):
     if request.method == 'GET':
-        letters = Letter.objects.filter(user=request.user).only(*LetterListSerializer.LIST_ONLY)
-        return _list_response(request, letters, LetterListSerializer)
+        letters = _search_sort(request, Letter.objects.filter(user=request.user), ('title', 'company', 'recipient_name'))
+        if request.query_params.get('preview'):
+            return _list_response(request, letters, LetterSerializer)
+        return _list_response(request, letters.only(*LetterListSerializer.LIST_ONLY), LetterListSerializer)
     ser = LetterSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
     letter = ser.save(user=request.user)
@@ -655,6 +681,10 @@ def api_applications(request):
             .select_related('cv', 'letter')
             .defer(*[f'cv__{f}' for f in _HEAVY_CV_FIELDS], 'letter__body')
         )
+        apps = _search_sort(request, apps, ('job_title', 'company', 'notes'))
+        st = request.query_params.get('status')
+        if st:
+            apps = apps.filter(status__in=st.split(','))
         return _list_response(request, apps, ApplicationSerializer)
     data = request.data.copy()
     cv_id = data.get('cv')
@@ -822,3 +852,88 @@ def api_compose_email(request):
         return Response({'ok': True, 'message': 'Email sent.'})
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+
+# ---------- Import ----------
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def api_cv_import(request):
+    """Upload a .docx or .pdf CV; returns a new CV with the content structured into fields."""
+    upload = request.FILES.get('file')
+    if not upload:
+        return Response({'error': 'Choose a Word (.docx) or PDF file to import.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        fields, method = cv_import.import_cv(upload)
+    except cv_import.ImportError_ as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    template = request.data.get('template')
+    fields['template'] = template if template in TEMPLATE_IDS else 'classic'
+    accent = (request.data.get('accent') or '').strip()
+    fields['design'] = {'accent': accent} if accent else {}
+    base = (upload.name or 'CV').rsplit('.', 1)[0][:60]
+    fields['title'] = f"{fields.get('full_name') or base} CV"[:200]
+    ser = CVSerializer(data=fields)
+    if not ser.is_valid():
+        # Drop whatever the parser got wrong rather than failing the whole import.
+        for bad in ser.errors:
+            fields.pop(bad, None)
+        ser = CVSerializer(data=fields)
+        ser.is_valid(raise_exception=True)
+    cv = ser.save(user=request.user)
+    CVRevision.objects.create(cv=cv, snapshot=_cv_snapshot(cv))
+    found = [k for k in ('experience_structured', 'education_structured', 'skills_structured') if fields.get(k)]
+    return Response({
+        'cv': CVSerializer(cv, context={'request': request}).data,
+        'method': method,
+        'found': found,
+    }, status=status.HTTP_201_CREATED)
+
+
+# ---------- Home + search ----------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_home(request):
+    """Everything the dashboard needs in one request."""
+    user = request.user
+    cvs = CV.objects.filter(user=user).defer('photo')
+    letters = Letter.objects.filter(user=user)
+    apps = Application.objects.filter(user=user)
+    by_status = dict(apps.values_list('status').annotate(n=Count('id')))
+    today = timezone.localdate()
+    upcoming = apps.filter(deadline__gte=today).exclude(status__in=('rejected', 'withdrawn', 'offer')).order_by('deadline')[:5]
+    profile = Profile.objects.filter(user=user).first()
+    checks = {
+        'profile': bool(profile and profile.full_name and profile.phone and profile.location),
+        'cv': cvs.exists(),
+        'letter': letters.exists(),
+        'application': apps.exists(),
+        'shared': cvs.filter(share_token__isnull=False).exists(),
+    }
+    return Response({
+        'name': (profile.full_name if profile else '') or user.username,
+        'counts': {'cvs': cvs.count(), 'letters': letters.count(), 'applications': apps.count()},
+        'pipeline': {k: by_status.get(k, 0) for k, _ in Application.STATUS_CHOICES},
+        'recent_cvs': CVPreviewSerializer(cvs.order_by('-updated_at')[:4], many=True).data,
+        'recent_letters': LetterSerializer(letters.order_by('-updated_at')[:3], many=True).data,
+        'upcoming': ApplicationSerializer(upcoming.select_related('cv', 'letter'), many=True).data,
+        'checklist': checks,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_search(request):
+    """Quick search for the command palette."""
+    q = (request.query_params.get('q') or '').strip()
+    if len(q) < 2:
+        return Response({'cvs': [], 'letters': [], 'applications': []})
+    u = request.user
+    cvs = CV.objects.filter(user=u).filter(Q(title__icontains=q) | Q(full_name__icontains=q) | Q(headline__icontains=q))
+    letters = Letter.objects.filter(user=u).filter(Q(title__icontains=q) | Q(company__icontains=q) | Q(recipient_name__icontains=q))
+    apps = Application.objects.filter(user=u).filter(Q(job_title__icontains=q) | Q(company__icontains=q))
+    return Response({
+        'cvs': list(cvs.values('id', 'title', 'template', 'updated_at')[:6]),
+        'letters': list(letters.values('id', 'title', 'letter_type', 'company', 'updated_at')[:6]),
+        'applications': list(apps.values('id', 'job_title', 'company', 'status')[:6]),
+    })

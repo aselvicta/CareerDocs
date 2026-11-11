@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Mail, Send, Paperclip, FileText, Sparkles } from 'lucide-react'
+import { Mail, Send, Paperclip, FileText, Sparkles, Wand2, X } from 'lucide-react'
+import { useShell } from '../shell/shellContext'
 import { api } from '../api'
 import { useToast } from '../ToastContext'
 import { useEmailDraft } from '../EmailDraftContext'
@@ -17,9 +18,10 @@ export function EmailComposer() {
   const [aiField, setAiField] = useState(null)
   const fileInputRef = useRef(null)
   const { addToast } = useToast()
+  const { openEmailWriter } = useShell()
 
   useEffect(() => {
-    Promise.all([api.get('/cvs/'), api.get('/letters/')]).then(([cvsData, lettersData]) => {
+    Promise.all([api.get('/cvs/?limit=50'), api.get('/letters/?limit=50')]).then(([cvsData, lettersData]) => {
       setCvs(Array.isArray(cvsData) ? cvsData : [])
       setLetters(Array.isArray(lettersData) ? lettersData : [])
     }).catch(() => {})
@@ -99,95 +101,83 @@ export function EmailComposer() {
     }
   }
 
+  const attachCount = selectedDocs.length + files.length
+
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1><Mail size={24} /> Compose email</h1>
-        <p className="subtitle">Write your email, attach documents from your account or from your device, then send.</p>
+    <div className="em">
+      <div className="pg-head">
+        <div>
+          <h1 className="pg-title">Email</h1>
+          <p className="pg-sub">Send your CV and cover letter straight to an employer, attached as PDFs.</p>
+        </div>
+        <div className="pg-actions">
+          <button type="button" className="btn btn-secondary" onClick={openEmailWriter}><Wand2 size={16} /> Write it with AI</button>
+        </div>
       </div>
-      <div className="card card--detail">
-        <div className="form-group">
-          <label>To</label>
-          <input
-            type="email"
-            value={toEmail}
-            onChange={e => setToEmail(e.target.value)}
-            placeholder="recipient@example.com"
-            className="form-control"
-          />
-        </div>
-        <div className="form-group">
-          <label>Subject</label>
-          <div className="form-row-with-btn">
-            <input
-              value={subject}
-              onChange={e => setSubject(e.target.value)}
-              placeholder="Email subject"
-              className="form-control"
-            />
-            <button type="button" className="btn btn-secondary" onClick={() => enhanceWithAI('subject')} disabled={aiField === 'subject'}>
-              <Sparkles size={14} /> {aiField === 'subject' ? '…' : 'Improve with AI'}
+      <div className="em-grid">
+        <section className="em-compose">
+          <label className="em-line">
+            <span>To</span>
+            <input type="email" value={toEmail} onChange={e => setToEmail(e.target.value)} placeholder="recruiter@company.com" />
+          </label>
+          <label className="em-line">
+            <span>Subject</span>
+            <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Application for Graduate Data Analyst" />
+            <button type="button" className="em-ai" onClick={() => enhanceWithAI('subject')} disabled={!!aiField} title="Improve subject with AI">
+              <Sparkles size={14} /> {aiField === 'subject' ? 'Improving...' : 'Improve'}
+            </button>
+          </label>
+          <textarea className="em-body" value={body} onChange={e => setBody(e.target.value)} rows={14}
+            placeholder={'Dear Hiring Manager,\n\nPlease find attached my CV and cover letter for...'} />
+          <div className="em-foot">
+            <button type="button" className="btn btn-ghost btn--sm" onClick={() => enhanceWithAI('body')} disabled={!!aiField}>
+              <Sparkles size={14} /> {aiField === 'body' ? 'Improving...' : 'Improve body with AI'}
+            </button>
+            <span className="em-foot__count">{attachCount ? `${attachCount} attachment${attachCount === 1 ? '' : 's'}` : 'No attachments'}</span>
+            <button type="button" className="btn btn-primary" onClick={handleSend} disabled={sending}>
+              <Send size={16} /> {sending ? 'Sending...' : 'Send'}
             </button>
           </div>
-        </div>
-        <div className="form-group">
-          <label>Body</label>
-          <div className="form-row-with-btn">
-            <textarea value={body} onChange={e => setBody(e.target.value)} className="form-control" rows={8} placeholder="Write your email..." />
-            <button type="button" className="btn btn-secondary" onClick={() => enhanceWithAI('body')} disabled={aiField === 'body'}>
-              <Sparkles size={14} /> {aiField === 'body' ? '…' : 'Improve with AI'}
-            </button>
-          </div>
-        </div>
+        </section>
 
-        <div className="form-group">
-          <label><FileText size={16} /> Attach from my docs</label>
-          <p className="muted" style={{ marginBottom: '0.5rem' }}>Select CVs or letters to attach as PDF.</p>
-          <div className="attach-docs">
-            {cvs.map(cv => (
-              <label key={`cv-${cv.id}`} className="attach-chip">
-                <input
-                  type="checkbox"
-                  checked={selectedDocs.some(d => d.type === 'cv' && d.id === cv.id)}
-                  onChange={() => toggleDoc('cv', cv.id, cv.title)}
-                />
-                <span>CV: {cv.title}</span>
-              </label>
-            ))}
-            {letters.map(l => (
-              <label key={`letter-${l.id}`} className="attach-chip">
-                <input
-                  type="checkbox"
-                  checked={selectedDocs.some(d => d.type === 'letter' && d.id === l.id)}
-                  onChange={() => toggleDoc('letter', l.id, l.letter_type_display + (l.title ? `: ${l.title}` : ''))}
-                />
-                <span>{l.letter_type_display}{l.title ? `: ${l.title}` : ''}</span>
-              </label>
-            ))}
-            {!cvs.length && !letters.length && <span className="muted">No CVs or letters yet.</span>}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label><Paperclip size={16} /> Attach from device</label>
-          <input ref={fileInputRef} type="file" multiple onChange={onFileChange} className="form-control" style={{ padding: '0.35rem' }} />
-          {files.length > 0 && (
-            <ul className="file-list">
-              {files.map((f, i) => (
-                <li key={i}>
-                  {f.name || `File ${i + 1}`}
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => removeFile(i)}>Remove</button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="btn-group" style={{ marginTop: '1rem' }}>
-          <button type="button" className="btn btn-primary" onClick={handleSend} disabled={sending}>
-            <Send size={18} /> {sending ? 'Sending…' : 'Send email'}
-          </button>
-        </div>
+        <aside className="em-side">
+          <section className="home-card">
+            <div className="home-card__head"><h2>Attach your documents</h2></div>
+            <p className="home-card__empty" style={{ marginBottom: '0.6rem' }}>Sent as PDFs in their template design.</p>
+            <div className="em-docs">
+              {cvs.map(cv => {
+                const on = selectedDocs.some(d => d.type === 'cv' && d.id === cv.id)
+                return (
+                  <button key={`cv-${cv.id}`} type="button" className={`em-doc ${on ? 'is-on' : ''}`} onClick={() => toggleDoc('cv', cv.id, cv.title)} aria-pressed={on}>
+                    <FileText size={16} /><span>{cv.title}</span><small>CV</small>
+                  </button>
+                )
+              })}
+              {letters.map(l => {
+                const on = selectedDocs.some(d => d.type === 'letter' && d.id === l.id)
+                const t = l.title || l.letter_type_display
+                return (
+                  <button key={`letter-${l.id}`} type="button" className={`em-doc ${on ? 'is-on' : ''}`} onClick={() => toggleDoc('letter', l.id, t)} aria-pressed={on}>
+                    <Mail size={16} /><span>{t}</span><small>Letter</small>
+                  </button>
+                )
+              })}
+              {!cvs.length && !letters.length && <p className="home-card__empty">No CVs or letters yet.</p>}
+            </div>
+          </section>
+          <section className="home-card">
+            <div className="home-card__head"><h2>From your device</h2></div>
+            <button type="button" className="ed-add" onClick={() => fileInputRef.current?.click()}><Paperclip size={15} /> Add files</button>
+            <input ref={fileInputRef} type="file" multiple onChange={onFileChange} hidden />
+            {files.length > 0 && (
+              <ul className="em-files">
+                {files.map((f, i) => (
+                  <li key={i}><Paperclip size={13} /><span>{f.name || `File ${i + 1}`}</span><button type="button" onClick={() => removeFile(i)} aria-label="Remove file"><X size={14} /></button></li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </aside>
       </div>
     </div>
   )

@@ -1,74 +1,104 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Briefcase, Pencil, Trash2, ExternalLink, FileText, Mail } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, CalendarClock, ExternalLink, FileText, Mail, Pencil, Plus, Trash2 } from 'lucide-react'
 import { api } from '../api'
 import { useToast } from '../ToastContext'
+import { ConfirmDialog } from '../shell/Modal'
+import { STATUS_LABEL, relativeTime, shortDate } from '../shell/format'
+
+const STAGES = ['draft', 'applied', 'interview', 'offer']
 
 export function ApplicationDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [app, setApp] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [deleting, setDeleting] = useState(false)
   const { addToast } = useToast()
+  const [app, setApp] = useState(undefined)
+  const [confirm, setConfirm] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    api.get(`/applications/${id}/`).then(setApp).catch(() => setApp(null)).finally(() => setLoading(false))
+    api.get(`/applications/${id}/`).then(setApp).catch(() => setApp(null))
   }, [id])
 
-  async function handleDelete() {
-    if (!confirm('Remove this application?')) return
-    setDeleting(true)
+  async function setStatus(status) {
+    const prev = app
+    setApp(a => ({ ...a, status }))
     try {
-      await api.delete(`/applications/${id}/`)
-      addToast('Application removed.', 'success')
-      navigate('/applications')
-    } catch (err) {
-      addToast(err?.message || 'Delete failed.', 'error')
-    } finally {
-      setDeleting(false)
+      setApp(await api.patch(`/applications/${id}/`, { status }))
+    } catch (e) {
+      setApp(prev)
+      addToast(e?.message || 'Could not update.', 'error')
     }
   }
+  async function remove() {
+    setBusy(true)
+    try {
+      await api.delete(`/applications/${id}/`)
+      addToast('Job removed.', 'success')
+      navigate('/applications')
+    } catch (e) { addToast(e?.message || 'Delete failed.', 'error'); setBusy(false) }
+  }
 
-  if (loading) return <div className="page"><div className="loading-state"><p>Loading...</p></div></div>
-  if (!app) return <div className="page"><p>Application not found.</p><Link to="/applications">Back to applications</Link></div>
+  if (app === undefined) return <div className="skel" style={{ height: 360, maxWidth: 900 }} />
+  if (app === null) return <div className="empty"><h2>Job not found</h2><p>It may have been deleted.</p><Link to="/applications" className="btn btn-primary">Back to applications</Link></div>
+
+  const closed = ['rejected', 'withdrawn'].includes(app.status)
+  const stageIndex = STAGES.indexOf(app.status)
 
   return (
-    <div className="page">
-      <div className="page-header page-header--row">
-        <h1><Briefcase size={28} /> {app.job_title}{app.company ? ` at ${app.company}` : ''}</h1>
-        <div className="btn-group">
-          <Link to={`/applications/${id}/edit`} className="btn btn-primary"><Pencil size={18} /> Edit</Link>
-          {app.job_url && (
-            <a href={app.job_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
-              <ExternalLink size={18} /> Job posting
-            </a>
-          )}
-          <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-            <Trash2 size={18} /> {deleting ? '…' : 'Delete'}
+    <div className="ad">
+      <Link to="/applications" className="dv-crumb"><ArrowLeft size={14} style={{ verticalAlign: '-2px' }} /> Applications</Link>
+      <div className="pg-head" style={{ marginTop: '0.4rem' }}>
+        <div>
+          <h1 className="pg-title">{app.job_title}</h1>
+          <p className="pg-sub">{app.company || 'Company not set'} · <span className={`status-pill status-pill--${app.status}`}>{STATUS_LABEL[app.status]}</span></p>
+        </div>
+        <div className="pg-actions">
+          {app.job_url && <a href={app.job_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary"><ExternalLink size={16} /> Advert</a>}
+          <Link to={`/applications/${id}/edit`} className="btn btn-secondary"><Pencil size={16} /> Edit</Link>
+          <button type="button" className="btn btn-ghost" onClick={() => setConfirm(true)} aria-label="Delete"><Trash2 size={16} /></button>
+        </div>
+      </div>
+
+      <section className="ad-stages" aria-label="Stage">
+        {STAGES.map((s, i) => (
+          <button key={s} type="button" className={`ad-stage ${!closed && i <= stageIndex ? 'is-done' : ''} ${app.status === s ? 'is-current' : ''}`} onClick={() => setStatus(s)}>
+            <span className="ad-stage__n">{i + 1}</span> {STATUS_LABEL[s]}
           </button>
+        ))}
+        <div className="ad-stages__closed">
+          <button type="button" className={`ed-chip ${app.status === 'rejected' ? 'is-active' : ''}`} onClick={() => setStatus('rejected')}>Rejected</button>
+          <button type="button" className={`ed-chip ${app.status === 'withdrawn' ? 'is-active' : ''}`} onClick={() => setStatus('withdrawn')}>Withdrawn</button>
+        </div>
+      </section>
+
+      <div className="ad-grid">
+        <section className="home-card">
+          <div className="home-card__head"><h2>Notes</h2><Link to={`/applications/${id}/edit`}>Edit</Link></div>
+          {app.notes ? <p className="whitespace ad-notes">{app.notes}</p> : <p className="home-card__empty">Add the recruiter's name, interview times or anything you want to remember.</p>}
+        </section>
+        <div className="ad-side">
+          <section className="home-card">
+            <div className="home-card__head"><h2>Details</h2></div>
+            <dl className="ad-dl">
+              <dt><CalendarClock size={14} /> Deadline</dt><dd>{app.deadline ? shortDate(app.deadline) : 'Not set'}</dd>
+              <dt>Added</dt><dd>{shortDate(app.created_at)}</dd>
+              <dt>Last update</dt><dd>{relativeTime(app.updated_at)}</dd>
+            </dl>
+          </section>
+          <section className="home-card">
+            <div className="home-card__head"><h2>Documents</h2></div>
+            {app.cv
+              ? <Link to={`/cv/${app.cv}`} className="dv-item dv-item--plain"><FileText size={17} /><span>{app.cv_title || 'CV'}</span></Link>
+              : <Link to="/cv" className="dv-item dv-item--plain"><Plus size={17} /><span>Attach a CV in Edit</span></Link>}
+            {app.letter
+              ? <Link to={`/letters/${app.letter}`} className="dv-item dv-item--plain"><Mail size={17} /><span>{app.letter_title || 'Cover letter'}</span></Link>
+              : <Link to={`/letters/templates`} className="dv-item dv-item--plain"><Plus size={17} /><span>Write a cover letter</span></Link>}
+          </section>
         </div>
       </div>
-      <div className="card card--detail" style={{ marginTop: '1rem' }}>
-        <div className="table-responsive">
-          <table className="detail-table">
-            <tbody>
-              <tr><td className="detail-table__label">Company</td><td>{app.company || 'Not set'}</td></tr>
-              <tr><td className="detail-table__label">Status</td><td><strong>{app.status_display}</strong></td></tr>
-              {app.deadline && <tr><td className="detail-table__label">Deadline</td><td>{new Date(app.deadline).toLocaleDateString()}</td></tr>}
-              {app.job_url && <tr><td className="detail-table__label">Link</td><td><a href={app.job_url} target="_blank" rel="noopener noreferrer" className="detail-table__break">{app.job_url}</a></td></tr>}
-              {app.cv && <tr><td className="detail-table__label">CV</td><td><Link to={`/cv/${app.cv}`}><FileText size={14} /> {app.cv_title || 'CV'}</Link></td></tr>}
-              {app.letter && <tr><td className="detail-table__label">Cover letter</td><td><Link to={`/letters/${app.letter}`}><Mail size={14} /> {app.letter_title || 'Letter'}</Link></td></tr>}
-            </tbody>
-          </table>
-        </div>
-        {app.notes && (
-          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Notes</h3>
-            <p className="whitespace">{app.notes}</p>
-          </div>
-        )}
-      </div>
+
+      <ConfirmDialog open={confirm} title="Remove this job?" body="The job and its notes will be deleted. Your CV and letter are not affected." busy={busy} onConfirm={remove} onClose={() => setConfirm(false)} confirmLabel="Remove" />
     </div>
   )
 }

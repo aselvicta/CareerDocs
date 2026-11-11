@@ -15,6 +15,7 @@ urlpatterns = [
     path('auth/me/', api_views.api_me),
     path('profile/', api_views.api_profile),
     path('cvs/', api_views.api_cv_list_create),
+    path('cvs/import/', api_views.api_cv_import),
     path('cvs/<int:pk>/', api_views.api_cv_detail),
     path('cvs/<int:pk>/duplicate/', api_views.api_cv_duplicate),
     path('cvs/<int:pk>/revisions/', api_views.api_cv_revisions),
@@ -43,6 +44,8 @@ urlpatterns = [
     path('applications/', api_views.api_applications),
     path('applications/<int:pk>/', api_views.api_application_detail),
     path('compose-email/', api_views.api_compose_email),
+    path('home/', api_views.api_home),
+    path('search/', api_views.api_search),
     # Analytics: page-view tracking + staff-only admin dashboard
     path('track/', analytics_views.api_track),
     path('admin/overview/', analytics_views.admin_overview),

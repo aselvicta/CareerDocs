@@ -31,7 +31,7 @@ export function CVDelete() {
 
   return (
     <div className="page">
-      <div className="card card--detail">
+      <div className="st-card" style={{ maxWidth: 520 }}>
         <h1>Delete CV</h1>
         <p>Are you sure you want to delete <strong>{cv.title}</strong>? This cannot be undone.</p>
         <div className="btn-group" style={{ marginTop: '1rem' }}>

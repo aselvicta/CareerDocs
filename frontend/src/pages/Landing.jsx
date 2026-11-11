@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Sun, Moon, ChevronDown } from 'lucide-react'
+import { Sun, Moon, ChevronDown, MapPin, Phone, Send } from 'lucide-react'
 import { AppLogo, Wordmark } from '../AppLogo'
 import { getApiBase } from '../api'
 import { useTheme } from '../ThemeContext'
 import photo480 from '../assets/landing-students-480.webp'
 import photo736 from '../assets/landing-students-736.webp'
 import photoJpg from '../assets/landing-students-736.jpg'
+import heroPhoto from '../assets/hero-photo.webp'
 import { CVDocument } from '../cv/CVDocument'
 import { ScaledDoc } from '../cv/ScaledDoc'
 import { SAMPLE_CV } from '../cv/sample'
@@ -41,33 +42,66 @@ function useWarmBackend() {
   }, [])
 }
 
-/** The hero document: a realistic CV page, built in HTML so it stays crisp at any size. */
+/** The hero document: a two column CV with a photo sidebar, built in HTML so it stays crisp at any size. */
 function HeroCV() {
   return (
     <div className="lp-doc" aria-hidden>
-      <div className="lp-doc__head">
-        <p className="lp-doc__name">Sarah Kamau</p>
-        <p className="lp-doc__role">Junior Data Analyst</p>
-        <p className="lp-doc__contact">Nairobi · sarah.kamau@email.com · +254 700 000 000</p>
-      </div>
-      <p className="lp-doc__h">Profile</p>
-      <p className="lp-doc__p">
-        Analytical graduate with hands-on experience turning raw data into clear reports.
-        Comfortable with SQL, Excel and Power BI, and used to presenting findings to non-technical teams.
-      </p>
-      <p className="lp-doc__h">Experience</p>
-      <div className="lp-doc__job">
-        <p><strong>Data Analyst Intern</strong>, Northwind Logistics <span>Jun 2024 to Dec 2024</span></p>
-        <ul>
-          <li className="lp-doc__hl">Built a weekly delivery dashboard that cut reporting time from 6 hours to 1.</li>
-          <li>Cleaned and merged 3 years of shipment data across 4 regional systems.</li>
-          <li>Presented monthly performance insights to the operations leadership team.</li>
+      <aside className="lp-doc__side">
+        <img className="lp-doc__photo" src={heroPhoto} alt="" width="276" height="306" />
+        <p className="lp-doc__sh">Contact</p>
+        <ul className="lp-doc__contact">
+          <li><MapPin size="1em" /> London, England, W1T 1JY</li>
+          <li><Phone size="1em" /> 020 7946 0377</li>
+          <li><Send size="1em" /> jsmith@email.com</li>
         </ul>
+        <p className="lp-doc__sh">Skills</p>
+        <ul className="lp-doc__skills">
+          <li>Consultative sales</li>
+          <li>Retail operating standards</li>
+          <li>Product demonstration</li>
+          <li>Visual merchandising</li>
+          <li>POS systems</li>
+          <li>Retail inventory management</li>
+          <li>Customer service training</li>
+        </ul>
+      </aside>
+      <div className="lp-doc__main">
+        <p className="lp-doc__name">Jessica Smith</p>
+        <p className="lp-doc__h">Professional summary</p>
+        <p className="lp-doc__p">
+          Driven Sales Associate focused on excellent sales results through impeccable customer service.
+          Training staff to an equally high standard to optimise customer experience and maximise profits.
+        </p>
+        <p className="lp-doc__h">Work history</p>
+        <div className="lp-doc__job">
+          <p className="lp-doc__role"><strong>Sales Associate</strong><span>02/2017 to Current</span></p>
+          <p className="lp-doc__org">Nike, London, UK</p>
+          <ul>
+            <li>Implemented a customer service training programme, improving guest satisfaction scores by 40% within 6 months.</li>
+            <li>Developed a new shop floor layout, reducing waiting times by 10 minutes per customer.</li>
+          </ul>
+        </div>
+        <div className="lp-doc__job">
+          <p className="lp-doc__role"><strong>Junior Sales Advisor</strong><span>03/2015 to 01/2017</span></p>
+          <p className="lp-doc__org">Walmart, London, UK</p>
+          <ul>
+            <li>Exceeded sales targets for swimwear collection by 40% through store product placement and visual merchandising.</li>
+            <li>Increased client retention rate from 70% to 90% within 8 months.</li>
+          </ul>
+        </div>
+        <div className="lp-doc__job">
+          <p className="lp-doc__role"><strong>Sales Assistant</strong><span>07/2012 to 03/2015</span></p>
+          <p className="lp-doc__org">Decathlon, London, UK</p>
+          <ul>
+            <li>Operated store POS system to process daily cash and card transactions with 100% accuracy.</li>
+          </ul>
+        </div>
+        <p className="lp-doc__h">Education</p>
+        <p className="lp-doc__p"><strong>Diploma in Sales and Marketing</strong>, 2006</p>
+        <p className="lp-doc__p lp-doc__muted">Metropolitan Community College, Leeds</p>
+        <p className="lp-doc__h">Certifications</p>
+        <p className="lp-doc__p">Retail Associate Certificate, 2009</p>
       </div>
-      <p className="lp-doc__h">Education</p>
-      <p className="lp-doc__p"><strong>BSc Statistics</strong>, University of Nairobi <span className="lp-doc__muted">2020 to 2024</span></p>
-      <p className="lp-doc__h">Skills</p>
-      <p className="lp-doc__skills">SQL · Excel · Power BI · Python · Data cleaning · Reporting</p>
     </div>
   )
 }
@@ -120,15 +154,9 @@ export function Landing() {
             </div>
 
             <div className="lp-hero__visual">
-              <div className="lp-sheet lp-sheet--back" aria-hidden>
-                <p className="lp-sheet__title">Cover letter</p>
-                {Array.from({ length: 9 }, (_, i) => <span key={i} className="mini__line" style={{ width: `${95 - ((i * 13) % 28)}%` }} />)}
-              </div>
+              <span className="lp-hero__block" aria-hidden />
+              <span className="lp-hero__dots" aria-hidden />
               <HeroCV />
-              <div className="lp-note lp-note--rewrite" aria-hidden>
-                <span className="lp-note__label">AI rewrite</span>
-                <span className="lp-note__before">Made reports for the delivery team.</span>
-              </div>
               <div className="lp-note lp-note--ats" aria-hidden>
                 <span className="lp-note__label">ATS keyword match</span>
                 <span className="lp-note__score">14 <small>of 16</small></span>

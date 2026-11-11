@@ -2,6 +2,19 @@
 
 A running log of product and engineering decisions, newest first. Add to it as we build.
 
+## 2026-11-11: App shell polish and new landing hero
+
+- **Landing hero** now shows a two column CV (slate photo sidebar, Contact and Skills, Work history)
+  on a coral block with a dot grid, plus the ATS keyword match card. Built in HTML (`HeroCV` in
+  `Landing.jsx`) so text stays crisp; only the headshot is an image (`assets/hero-photo.webp`).
+  The cover letter sheet and the "AI rewrite" note were removed from the hero.
+- **Collapsible sidebar**: the app sidebar folds to a 68px icon rail (button next to the logo, or
+  Ctrl/Cmd+\\). It folds automatically in the CV and letter editors so the split screen gets the
+  room, unless the user has made an explicit choice (stored in `localStorage['sh-rail']`). The
+  width is driven by `--sh-side` via a `sh-rail` class on `<html>`.
+- Applications board columns shrink to fit (all five stages visible at 1440px).
+- Dashboard links read "Open CVs" instead of "All 1 CVs".
+
 ## 2026-11-11: Template system, editor and exports
 
 ### What shipped

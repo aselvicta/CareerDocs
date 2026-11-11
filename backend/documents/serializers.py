@@ -141,3 +141,9 @@ class LetterListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     LIST_ONLY = ('id', 'letter_type', 'title', 'template', 'recipient_name', 'company', 'created_at', 'updated_at', 'user_id')
+
+
+class CVPreviewSerializer(CVSerializer):
+    """Full CV content for thumbnails, without the photo."""
+    class Meta(CVSerializer.Meta):
+        fields = [f for f in CVSerializer.Meta.fields if f != 'photo']

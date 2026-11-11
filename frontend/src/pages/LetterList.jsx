@@ -1,80 +1,112 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Mail, Plus, Pencil, FileDown, Trash2, Send } from 'lucide-react'
-import { downloadExport } from '../api'
+import { Link, useNavigate } from 'react-router-dom'
+import { Copy, Eye, FileDown, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
+import { api, downloadExport } from '../api'
 import { useToast } from '../ToastContext'
-import { SendEmailModal } from '../SendEmailModal'
-import { usePagedList } from '../usePagedList'
-import { Pagination } from '../Pagination'
+import { LetterDocument } from '../cv/LetterDocument'
+import { ScaledDoc } from '../cv/ScaledDoc'
+import { CardMenu, LibraryPager, LibraryToolbar } from '../shell/Library'
+import { useLibrary } from '../shell/useLibrary'
+import { ConfirmDialog } from '../shell/Modal'
+import { relativeTime } from '../shell/format'
+import '../cv/studio.css'
 
 export function LetterList() {
-  const { items: letters, page, pages, total, setPage, loading, initialLoading } = usePagedList('/letters/')
-  const [downloading, setDownloading] = useState(null)
-  const [emailModal, setEmailModal] = useState({ open: false, id: null, title: '' })
+  const lib = useLibrary('/letters/')
   const { addToast } = useToast()
+  const navigate = useNavigate()
+  const [toDelete, setToDelete] = useState(null)
+  const [busy, setBusy] = useState(false)
 
-
-  async function handleExport(id, format, filename) {
-    const key = `${id}-${format}`
-    setDownloading(key)
+  async function duplicate(l) {
     try {
-      await downloadExport(`/letters/${id}/export/${format}/`, filename)
-      addToast('Download started.', 'success')
-    } catch (e) {
-      addToast(e?.message || 'Download failed.', 'error')
-    } finally {
-      setDownloading(null)
-    }
+      const data = await api.post(`/letters/${l.id}/duplicate/`)
+      addToast('Copy created.', 'success')
+      navigate(`/letters/${data.id}/edit`)
+    } catch (e) { addToast(e?.message || 'Could not duplicate.', 'error') }
+  }
+  async function remove() {
+    setBusy(true)
+    try {
+      await api.delete(`/letters/${toDelete.id}/`)
+      addToast('Letter deleted.', 'success')
+      setToDelete(null)
+      lib.reload()
+    } catch (e) { addToast(e?.message || 'Delete failed.', 'error') } finally { setBusy(false) }
+  }
+  async function word(l) {
+    try { await downloadExport(`/letters/${l.id}/export/docx/`, `${(l.title || 'Letter').replace(/\s+/g, '_')}.docx`) } catch (e) { addToast(e?.message || 'Download failed.', 'error') }
   }
 
-  if (initialLoading) return <div className="page"><div className="loading-state"><p>Loading...</p></div></div>
+  const empty = !lib.initialLoading && lib.total === 0 && !lib.q
 
   return (
-    <div className="page">
-      <div className="page-header page-header--row">
-        <h1>My Letters</h1>
-        <Link to="/letters/templates" className="btn btn-primary"><Plus size={18} /> New letter</Link>
+    <div>
+      <div className="pg-head">
+        <div>
+          <h1 className="pg-title">Cover letters</h1>
+          <p className="pg-sub">Cover letters, internship and job application letters, references and resignations, designed to match your CV.</p>
+        </div>
+        <div className="pg-actions">
+          <Link to="/letters/templates" className="btn btn-primary"><Plus size={16} /> New letter</Link>
+        </div>
       </div>
-      {letters.length ? (
-        <div className={`card-list${loading ? ' card-list--busy' : ''}`}>
-          {letters.map(l => (
-            <article key={l.id} className="card card--hover">
-              <div className="card__main">
-                <h2 className="card__title">
-                  <Link to={`/letters/${l.id}`}><Mail size={20} /> {l.letter_type_display}{l.title ? `: ${l.title}` : ''}</Link>
-                </h2>
-                <p className="card__meta">To: {l.recipient_name || 'Not set'} · {l.company || ''} · {new Date(l.updated_at).toLocaleDateString()}</p>
-              </div>
-              <div className="card__actions">
-                <Link to={`/letters/${l.id}/edit`} className="btn btn-ghost btn-sm"><Pencil size={14} /> Edit</Link>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleExport(l.id, 'pdf', `${l.letter_type_display.replace(/\s/g, '_')}_${l.id}.pdf`)} disabled={downloading === `${l.id}-pdf`}>
-                  <FileDown size={14} /> {downloading === `${l.id}-pdf` ? '…' : 'PDF'}
-                </button>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleExport(l.id, 'docx', `${l.letter_type_display.replace(/\s/g, '_')}_${l.id}.docx`)} disabled={downloading === `${l.id}-docx`}>
-                  <FileDown size={14} /> {downloading === `${l.id}-docx` ? '…' : 'Word'}
-                </button>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEmailModal({ open: true, id: l.id, title: l.letter_type_display + (l.title ? `: ${l.title}` : '') })}>
-                  <Send size={14} /> Send email
-                </button>
-                <Link to={`/letters/${l.id}/delete`} className="btn btn-ghost btn-sm btn-danger"><Trash2 size={14} /> Delete</Link>
-              </div>
-            </article>
-          ))}
+
+      {empty ? (
+        <div className="empty">
+          <div className="empty__art" aria-hidden />
+          <h2>No letters yet</h2>
+          <p>Pick the design that matches your CV, add the employer, and let AI draft a letter tailored to the advert.</p>
+          <div className="empty__actions"><Link to="/letters/templates" className="btn btn-primary"><Plus size={16} /> Write a cover letter</Link></div>
         </div>
       ) : (
-        <div className="empty-block">
-          <Mail size={48} className="empty-block__icon" />
-          <p>No letters yet.</p>
-          <Link to="/letters/templates" className="btn btn-primary">Create a letter</Link>
-        </div>
+        <>
+          <LibraryToolbar lib={lib} placeholder="Search by title, company or recipient" noun="letter" />
+          {lib.initialLoading ? (
+            <div className="doc-grid">{[0, 1, 2, 3].map(i => <div key={i} className="skel" style={{ aspectRatio: '794 / 1000' }} />)}</div>
+          ) : lib.items.length === 0 ? (
+            <p className="pg-sub">No letters match "{lib.q}".</p>
+          ) : (
+            <div className="doc-grid" style={{ opacity: lib.loading ? 0.6 : 1 }}>
+              {!lib.q && lib.page === 1 && (
+                <div className="doc-card doc-card--new">
+                  <Link to="/letters/templates" className="doc-card__thumb"><Plus size={22} /> New letter<small>Matches your CV</small></Link>
+                </div>
+              )}
+              {lib.items.map(l => (
+                <div key={l.id} className="doc-card">
+                  <Link to={`/letters/${l.id}/edit`} className="doc-card__thumb" aria-label={`Edit ${l.title || 'letter'}`}>
+                    <div className="doc-card__page"><ScaledDoc clip><LetterDocument letter={l} date={l.updated_at} /></ScaledDoc></div>
+                  </Link>
+                  <div className="doc-card__meta">
+                    <div className="doc-card__text">
+                      <Link to={`/letters/${l.id}`} className="doc-card__title">{l.title || l.letter_type_display}</Link>
+                      <div className="doc-card__sub">{[l.company, l.letter_type_display].filter(Boolean).join(' · ')} · {relativeTime(l.updated_at)}</div>
+                    </div>
+                    <CardMenu items={[
+                      { icon: Pencil, label: 'Edit', to: `/letters/${l.id}/edit` },
+                      { icon: Eye, label: 'Open', to: `/letters/${l.id}` },
+                      { icon: FileDown, label: 'Download PDF', to: `/print/letter/${l.id}` },
+                      { icon: FileText, label: 'Download Word', onClick: () => word(l) },
+                      { icon: Copy, label: 'Duplicate', onClick: () => duplicate(l) },
+                      { icon: Trash2, label: 'Delete', onClick: () => setToDelete(l), danger: true },
+                    ]} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <LibraryPager lib={lib} noun="letters" />
+        </>
       )}
-      <Pagination page={page} pages={pages} total={total} onPage={setPage} noun="letters" busy={loading} />
-      <SendEmailModal
-        open={emailModal.open}
-        onClose={() => setEmailModal({ open: false, id: null, title: '' })}
-        type="letter"
-        id={emailModal.id}
-        title={emailModal.title || 'Letter'}
+
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Delete this letter?"
+        body={<>"{toDelete?.title || toDelete?.letter_type_display}" will be deleted. This cannot be undone.</>}
+        busy={busy}
+        onConfirm={remove}
+        onClose={() => setToDelete(null)}
       />
     </div>
   )

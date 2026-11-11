@@ -11,6 +11,7 @@ ROUTE_EVENTS = {
     ('auth/logout/', 'POST'): 'auth.logout',
     ('profile/', 'PATCH'): 'profile.update',
     ('cvs/', 'POST'): 'cv.create',
+    ('cvs/import/', 'POST'): 'cv.import',
     ('cvs/<int:pk>/', 'PUT'): 'cv.update',
     ('cvs/<int:pk>/', 'PATCH'): 'cv.update',
     ('cvs/<int:pk>/', 'DELETE'): 'cv.delete',

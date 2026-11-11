@@ -5,8 +5,12 @@ import { api } from './api'
 import { useToast } from './ToastContext'
 import { useEmailDraft } from './EmailDraftContext'
 
-export function EmailAssistant() {
-  const [open, setOpen] = useState(false)
+/** Controlled by the app shell (`open`, `onOpenChange`); renders its own button only when uncontrolled. */
+export function EmailAssistant({ open: openProp, onOpenChange } = {}) {
+  const [openState, setOpenState] = useState(false)
+  const controlled = openProp !== undefined
+  const open = controlled ? openProp : openState
+  const setOpen = v => (controlled ? onOpenChange?.(typeof v === 'function' ? v(open) : v) : setOpenState(v))
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
@@ -48,7 +52,7 @@ export function EmailAssistant() {
 
   return (
     <>
-      <button
+      {!controlled && <button
         type="button"
         className="fab fab--right"
         onClick={() => setOpen(!open)}
@@ -56,7 +60,7 @@ export function EmailAssistant() {
         title="AI email assistant"
       >
         <Mail size={24} />
-      </button>
+      </button>}
       {open && (
         <div className="fab-panel fab-panel--right">
           <div className="fab-panel__header">

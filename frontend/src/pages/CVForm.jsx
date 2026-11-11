@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Sparkles, Target, Plus, Trash2, Camera, X, FileDown } from 'lucide-react'
+import { Sparkles, Target, Plus, Trash2, Camera, X, FileDown, FileCheck2 } from 'lucide-react'
 import { api } from '../api'
 import { useToast } from '../ToastContext'
 import { CVDocument } from '../cv/CVDocument'
@@ -104,6 +104,7 @@ export function CVForm() {
   const [atsReport, setAtsReport] = useState('')
   const [matching, setMatching] = useState(null)
   const [plainOpen, setPlainOpen] = useState(() => new Set())
+  const [imported, setImported] = useState(() => location.state?.imported || null)
   const photoInput = useRef(null)
 
   useEffect(() => {
@@ -247,6 +248,19 @@ export function CVForm() {
           </div>
           {tailorSuggestions && <div className="ed-result"><h4>Tailor suggestions</h4><div className="whitespace">{tailorSuggestions}</div></div>}
           {atsReport && <div className="ed-result"><h4>ATS check</h4><div className="whitespace">{atsReport}</div></div>}
+        </div>
+      )}
+
+      {tab === 'content' && imported && (
+        <div className="banner">
+          <FileCheck2 size={18} />
+          <div className="banner__text">
+            <strong>Imported from {imported.file}</strong>
+            {imported.method === 'ai'
+              ? 'We sorted your CV into sections. Open each one below to check names, dates and bullet points, then try a few templates in the Design tab.'
+              : 'We pulled out your details. Some parts may be in plain text: open Experience and Education to split them into entries.'}
+          </div>
+          <button type="button" className="banner__close" onClick={() => setImported(null)} aria-label="Dismiss"><X size={16} /></button>
         </div>
       )}
 

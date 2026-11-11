@@ -37,8 +37,12 @@ function formatHelpMessage(text) {
   return parts.length ? parts : text
 }
 
-export function HelpChat() {
-  const [open, setOpen] = useState(false)
+/** Controlled by the app shell (`open`, `onOpenChange`); renders its own button only when uncontrolled. */
+export function HelpChat({ open: openProp, onOpenChange } = {}) {
+  const [openState, setOpenState] = useState(false)
+  const controlled = openProp !== undefined
+  const open = controlled ? openProp : openState
+  const setOpen = v => (controlled ? onOpenChange?.(typeof v === 'function' ? v(open) : v) : setOpenState(v))
   const [question, setQuestion] = useState('')
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
@@ -67,7 +71,7 @@ export function HelpChat() {
 
   return (
     <>
-      <button
+      {!controlled && <button
         type="button"
         className="fab fab--left"
         onClick={() => setOpen(!open)}
@@ -75,7 +79,7 @@ export function HelpChat() {
         title="Help & how to use the app"
       >
         <HelpCircle size={24} />
-      </button>
+      </button>}
       {open && (
         <div className="fab-panel fab-panel--left">
           <div className="fab-panel__header">

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, FileUp } from 'lucide-react'
+import { useShell } from '../shell/shellContext'
 import { CVDocument } from '../cv/CVDocument'
 import { LetterDocument } from '../cv/LetterDocument'
 import { ScaledDoc } from '../cv/ScaledDoc'
@@ -19,6 +20,7 @@ export function CVTemplates({ kind = 'cv' }) {
   const category = params.get('category') || 'all'
   const [accent, setAccent] = useState(null)
   const isLetter = kind === 'letter'
+  const { openImport } = useShell()
 
   const shown = useMemo(
     () => (category === 'all' ? TEMPLATES : TEMPLATES.filter(t => t.category === category)),
@@ -48,7 +50,10 @@ export function CVTemplates({ kind = 'cv' }) {
               : `${TEMPLATES.length} designs, all exported as clean, selectable text that applicant tracking systems can read. Your content carries over when you switch.`}
           </p>
         </div>
-        <Link to={isLetter ? '/letters' : '/cv'} className="btn btn-ghost tg-back"><ArrowLeft size={16} /> {isLetter ? 'My letters' : 'My CVs'}</Link>
+        <div className="pg-actions tg-back">
+          {!isLetter && <button type="button" className="btn btn-secondary" onClick={openImport}><FileUp size={16} /> Import my CV</button>}
+          <Link to={isLetter ? '/letters' : '/cv'} className="btn btn-ghost"><ArrowLeft size={16} /> {isLetter ? 'My letters' : 'My CVs'}</Link>
+        </div>
       </div>
 
       <div className="tg-toolbar">
