@@ -168,7 +168,10 @@
   padding: 1.4rem 1.4rem 0; overflow: hidden; transition: border-color var(--transition);
 }
 .lp-template:hover .lp-template__frame { border-color: var(--lp-blue); }
-.lp-template:hover .mini { transform: translateY(-6px); }
+.lp-template__page { border-radius: 3px 3px 0 0; overflow: hidden; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 6px 20px rgba(15, 23, 42, 0.08); transition: transform 0.25s ease; }
+.lp-template__page .scaled-doc { aspect-ratio: 794 / 980; height: auto !important; }
+.lp-template:hover .lp-template__page { transform: translateY(-6px); }
+.lp-templates__more { text-align: center; margin-top: 2.25rem; }
 .lp-template__meta { padding: 1rem 0.15rem 0; }
 .lp-template__meta p { margin: 0 0 0.6rem; color: var(--lp-muted); font-size: 0.92rem; line-height: 1.55; }
 .lp-template__cta { color: var(--lp-blue); font-weight: 600; font-size: 0.92rem; }

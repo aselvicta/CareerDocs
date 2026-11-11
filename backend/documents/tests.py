@@ -90,3 +90,75 @@ class GoogleOAuthTests(TestCase):
     def test_not_configured_redirects_to_frontend(self):
         r = self.client.get('/api/auth/google/')
         self.assertEqual(r['Location'], 'http://frontend.test/oauth/callback?error=not_configured')
+
+
+class TemplateDesignTests(TestCase):
+    """Templates, design settings, photo validation and template-aware exports."""
+
+    def setUp(self):
+        from rest_framework.authtoken.models import Token
+        from rest_framework.test import APIClient
+        from accounts.models import User
+        self.user = User.objects.create_user(username='t', email='t@example.com', password='x')
+        self.c = APIClient()
+        self.c.credentials(HTTP_AUTHORIZATION=f'Token {Token.objects.create(user=self.user).key}')
+
+    def _cv(self, **extra):
+        data = {
+            'title': 'T', 'template': 'professional', 'full_name': 'Sarah Kamau', 'headline': 'Analyst',
+            'experience_structured': [{'role': 'Intern', 'company': 'Acme', 'start_date': '2024', 'current': True,
+                                       'bullets': 'Did a thing\nDid another'}],
+            'skills_structured': [{'category': 'Tools', 'items': 'SQL, Excel'}],
+            'languages': [{'language': 'English', 'proficiency': 'Fluent'}],
+        }
+        data.update(extra)
+        return self.c.post('/api/cvs/', data, format='json')
+
+    def test_design_is_cleaned(self):
+        r = self._cv(design={'accent': '#1D4ED8', 'font': 'serif', 'density': 'bogus',
+                             'section_order': ['skills', 'nope', 'skills', 'summary'], 'show_photo': False, 'x': 1})
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data['design'], {'accent': '#1d4ed8', 'font': 'serif', 'show_photo': False,
+                                            'section_order': ['skills', 'summary']})
+
+    def test_bad_accent_and_photo_rejected(self):
+        self.assertEqual(self._cv(design={'accent': 'red'}).status_code, 400)
+        self.assertEqual(self._cv(photo='javascript:alert(1)').status_code, 400)
+        self.assertEqual(self._cv(photo='data:image/svg+xml;base64,PHN2Zz4=').status_code, 400)
+        ok = self._cv(photo='data:image/png;base64,iVBORw0KGgo=')
+        self.assertEqual(ok.status_code, 201)
+
+    def test_unknown_template_rejected(self):
+        self.assertEqual(self._cv(template='fancy').status_code, 400)
+
+    def test_list_excludes_photo(self):
+        self._cv(photo='data:image/png;base64,iVBORw0KGgo=')
+        row = self.c.get('/api/cvs/').data[0]
+        self.assertNotIn('photo', row)
+        self.assertEqual(row['template'], 'professional')
+
+    def test_every_template_exports_pdf_and_docx(self):
+        from .catalog import TEMPLATE_IDS
+        cv_id = self._cv(photo='data:image/png;base64,iVBORw0KGgo=').data['id']
+        letter_id = self.c.post('/api/letters/', {'letter_type': 'cover', 'body': 'Hello.\n\nSecond.', 'sender_name': 'S K'},
+                                format='json').data['id']
+        for t in TEMPLATE_IDS:
+            self.c.patch(f'/api/cvs/{cv_id}/', {'template': t}, format='json')
+            self.c.patch(f'/api/letters/{letter_id}/', {'template': t}, format='json')
+            for url in (f'/api/cvs/{cv_id}/export/pdf/', f'/api/cvs/{cv_id}/export/docx/',
+                        f'/api/letters/{letter_id}/export/pdf/', f'/api/letters/{letter_id}/export/docx/'):
+                r = self.c.get(url)
+                self.assertEqual(r.status_code, 200, f'{t} {url}')
+
+    def test_harvard_puts_education_first(self):
+        from .catalog import resolve_design
+        self.assertEqual(resolve_design('harvard', {})['section_order'][:3], ['summary', 'education', 'experience'])
+        self.assertEqual(resolve_design('classic', {'section_order': ['skills']})['section_order'][0], 'skills')
+
+    def test_revision_restores_design(self):
+        cv_id = self._cv(design={'accent': '#0f766e'}).data['id']
+        self.c.patch(f'/api/cvs/{cv_id}/', {'template': 'modern', 'design': {'accent': '#be123c'}}, format='json')
+        from .models import CVRevision
+        first = CVRevision.objects.filter(cv_id=cv_id).order_by('created_at', 'pk').first()
+        r = self.c.post(f'/api/cvs/{cv_id}/revert/{first.pk}/')
+        self.assertEqual((r.data['template'], r.data['design']['accent']), ('professional', '#0f766e'))

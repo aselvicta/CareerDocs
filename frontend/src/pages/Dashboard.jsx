@@ -66,7 +66,7 @@ export function Dashboard() {
         <div className="section-header">
           <h2><Mail size={22} /> Letters</h2>
           <div className="section-actions">
-            <Link to="/letters/new" className="btn btn-primary"><Plus size={18} /> New letter</Link>
+            <Link to="/letters/templates" className="btn btn-primary"><Plus size={18} /> New letter</Link>
             <Link to="/letters" className="btn btn-ghost">View all <ChevronRight size={16} /></Link>
           </div>
         </div>
@@ -82,7 +82,7 @@ export function Dashboard() {
             ))}
           </ul>
         ) : (
-          <p className="empty-state">No letters yet. <Link to="/letters/new">Create a cover letter or other letter</Link>.</p>
+          <p className="empty-state">No letters yet. <Link to="/letters/templates">Create a cover letter or other letter</Link>.</p>
         )}
       </section>
     </div>

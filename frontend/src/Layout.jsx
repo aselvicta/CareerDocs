@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   FileText,
@@ -26,8 +26,12 @@ const BREAKPOINT_NAV = '(min-width: 896px)'
 
 const navLinkClass = 'nav__link'
 
+// Pages that need the full width: template gallery and the split-screen editors.
+const WIDE_ROUTES = /^\/(cv\/templates|cv\/new|cv\/\d+(\/edit)?|letters\/new|letters\/templates|letters\/\d+(\/edit)?)\/?$/
+
 export function Layout() {
   const { user, logout } = useAuth()
+  const { pathname } = useLocation()
   const { theme, toggleTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -137,7 +141,7 @@ export function Layout() {
           </div>
         </div>
       </header>
-      <main className="container">
+      <main className={WIDE_ROUTES.test(pathname) ? 'container container--wide' : 'container'}>
         <Suspense fallback={<LoadingState />}>
           <Outlet />
         </Suspense>

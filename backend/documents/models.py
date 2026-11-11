@@ -1,18 +1,22 @@
 from django.db import models
 from django.conf import settings
 
+from .catalog import TEMPLATE_CHOICES
+
 
 class CV(models.Model):
     """Stored CV / resume created by the user."""
-    TEMPLATE_CHOICES = [
-        ('classic', 'Classic'),
-        ('modern', 'Modern'),
-        ('minimal', 'Minimal'),
-        ('professional', 'Professional'),
-    ]
+    TEMPLATE_CHOICES = TEMPLATE_CHOICES
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cvs')
     title = models.CharField(max_length=200, default='My CV')
     template = models.CharField(max_length=20, choices=TEMPLATE_CHOICES, default='classic')
+    # Look & feel: {accent, font, density, section_order, hidden}. See catalog.resolve_design.
+    design = models.JSONField(default=dict, blank=True)
+    # Optional headshot as a small data URL (compressed client-side). Free Render has no
+    # persistent disk, so it lives in the row; list endpoints never load it.
+    photo = models.TextField(blank=True, default='')
+    headline = models.CharField(max_length=200, blank=True, default='')  # e.g. "Junior Data Analyst"
+    links = models.JSONField(default=list, blank=True)  # [{label, url}] e.g. LinkedIn, GitHub, portfolio
     # Contact
     full_name = models.CharField(max_length=200, blank=True)
     email = models.EmailField(blank=True)
@@ -95,6 +99,11 @@ class Letter(models.Model):
     ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='letters')
     letter_type = models.CharField(max_length=20, choices=LETTER_TYPE_CHOICES)
+    # Same template ids as CVs so a letter can match its CV.
+    template = models.CharField(max_length=20, choices=TEMPLATE_CHOICES, default='classic')
+    design = models.JSONField(default=dict, blank=True)
+    sender_location = models.CharField(max_length=200, blank=True, default='')
+    sender_headline = models.CharField(max_length=200, blank=True, default='')
     title = models.CharField(max_length=200, default='')
     # Content
     recipient_name = models.CharField(max_length=200, blank=True)

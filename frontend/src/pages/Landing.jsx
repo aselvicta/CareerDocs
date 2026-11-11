@@ -7,15 +7,15 @@ import { useTheme } from '../ThemeContext'
 import photo480 from '../assets/landing-students-480.webp'
 import photo736 from '../assets/landing-students-736.webp'
 import photoJpg from '../assets/landing-students-736.jpg'
+import { CVDocument } from '../cv/CVDocument'
+import { ScaledDoc } from '../cv/ScaledDoc'
+import { SAMPLE_CV } from '../cv/sample'
+import { TEMPLATES as ALL_TEMPLATES, getTemplate } from '../cv/templates'
+import '../cv/studio.css'
 import './landing.css'
 
-// Same names and descriptions as the in-app template picker (pages/CVTemplates.jsx).
-const TEMPLATES = [
-  { id: 'classic', name: 'Classic', text: 'Timeless, clear structure. Ideal for traditional industries and senior roles.' },
-  { id: 'modern', name: 'Modern', text: 'Clean lines and subtle hierarchy. Perfect for tech and creative roles.' },
-  { id: 'minimal', name: 'Minimal', text: 'Maximum impact with minimal clutter. Best for design and UX portfolios.' },
-  { id: 'professional', name: 'Professional', text: 'Structured and formal. Suits finance, law and corporate positions.' },
-]
+// A few real templates rendered with sample content (the full gallery is at /templates).
+const SHOWCASE = ['harvard', 'professional', 'modern', 'studio'].map(getTemplate)
 
 const STEPS = [
   { title: 'Pick a template', text: 'Start from a clean, recruiter-friendly layout. You can switch designs at any time without retyping.' },
@@ -73,42 +73,6 @@ function HeroCV() {
 }
 
 /** Miniature CV in each template's style, for the template gallery. */
-function MiniCV({ variant }) {
-  const lines = n => Array.from({ length: n }, (_, i) => <span key={i} className="mini__line" style={{ width: `${92 - ((i * 17) % 30)}%` }} />)
-  return (
-    <div className={`mini mini--${variant}`} aria-hidden>
-      {variant === 'modern' ? (
-        <>
-          <div className="mini__side">
-            <span className="mini__name">Sarah Kamau</span>
-            <span className="mini__role">Data Analyst</span>
-            <span className="mini__h">Contact</span>{lines(3)}
-            <span className="mini__h">Skills</span>{lines(4)}
-          </div>
-          <div className="mini__main">
-            <span className="mini__h">Profile</span>{lines(3)}
-            <span className="mini__h">Experience</span>{lines(5)}
-            <span className="mini__h">Education</span>{lines(2)}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="mini__head">
-            <span className="mini__name">Sarah Kamau</span>
-            <span className="mini__role">Junior Data Analyst</span>
-          </div>
-          <div className="mini__body">
-            <span className="mini__h">Profile</span>{lines(3)}
-            <span className="mini__h">Experience</span>{lines(5)}
-            <span className="mini__h">Education</span>{lines(2)}
-            <span className="mini__h">Skills</span>{lines(2)}
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
 export function Landing() {
   useWarmBackend()
   const { theme, toggleTheme } = useTheme()
@@ -177,7 +141,7 @@ export function Landing() {
         {/* ---------- Facts ---------- */}
         <section className="lp-facts" aria-label="What you get">
           <div className="lp-wrap lp-facts__row">
-            <p><strong>4</strong> professional CV templates</p>
+            <p><strong>{ALL_TEMPLATES.length}</strong> CV templates, each with a matching letter</p>
             <p><strong>5</strong> letter types</p>
             <p><strong>8</strong> AI writing tools</p>
             <p><strong>PDF</strong> and <strong>Word</strong> export</p>
@@ -190,19 +154,25 @@ export function Landing() {
             <div className="lp-section__head">
               <p className="lp-overline">Templates</p>
               <h2>Layouts recruiters actually read</h2>
-              <p className="lp-sub">Every template is clean, single-purpose and easy for applicant tracking systems to parse. Switch between them at any time.</p>
+              <p className="lp-sub">Sixteen designs from strict ATS formats to modern two column layouts, each with a matching cover letter. Switch at any time without retyping.</p>
             </div>
             <div className="lp-templates">
-              {TEMPLATES.map(t => (
-                <Link key={t.id} to="/register" className="lp-template">
-                  <div className="lp-template__frame"><MiniCV variant={t.id} /></div>
+              {SHOWCASE.map(t => (
+                <Link key={t.id} to="/templates" className="lp-template">
+                  <div className="lp-template__frame">
+                    <div className="lp-template__page">
+                      <ScaledDoc clip><CVDocument cv={SAMPLE_CV} template={t.id} /></ScaledDoc>
+                    </div>
+                  </div>
                   <div className="lp-template__meta">
                     <h3>{t.name}</h3>
-                    <p>{t.text}</p>
-                    <span className="lp-template__cta">Use this template</span>
+                    <p>{t.desc}</p>
                   </div>
                 </Link>
               ))}
+            </div>
+            <div className="lp-templates__more">
+              <Link to="/templates" className="lp-btn lp-btn--ghost">See all {ALL_TEMPLATES.length} CV and cover letter templates</Link>
             </div>
           </div>
         </section>
@@ -351,7 +321,7 @@ export function Landing() {
           </div>
           <nav aria-label="Product">
             <h4>Product</h4>
-            <a href="#templates">Templates</a>
+            <Link to="/templates">Templates</Link>
             <a href="#how">How it works</a>
             <a href="#features">Features</a>
             <a href="#faq">FAQ</a>

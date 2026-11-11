@@ -224,6 +224,9 @@ def _cv_snapshot(cv):
     return {
         'title': cv.title or '',
         'template': cv.template or 'classic',
+        'design': cv.design or {},
+        'headline': cv.headline or '',
+        'links': cv.links or [],
         'full_name': cv.full_name or '',
         'email': cv.email or '',
         'phone': cv.phone or '',
@@ -247,6 +250,10 @@ def _letter_snapshot(letter):
     return {
         'letter_type': letter.letter_type or 'cover',
         'title': letter.title or '',
+        'template': letter.template or 'classic',
+        'design': letter.design or {},
+        'sender_location': letter.sender_location or '',
+        'sender_headline': letter.sender_headline or '',
         'recipient_name': letter.recipient_name or '',
         'recipient_title': letter.recipient_title or '',
         'company': letter.company or '',

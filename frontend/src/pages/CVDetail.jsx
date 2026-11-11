@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { FileText, Pencil, FileDown, Trash2, Mail, Copy, Eye, History, RotateCcw, Share2, Link2 } from 'lucide-react'
+import { FileText, Pencil, FileDown, Trash2, Mail, Copy, History, RotateCcw, Share2, Link2, Palette } from 'lucide-react'
 import { api, downloadExport } from '../api'
 import { useToast } from '../ToastContext'
 import { SendEmailModal } from '../SendEmailModal'
-import { PdfPreviewModal } from '../PdfPreviewModal'
+import { CVDocument } from '../cv/CVDocument'
+import { ScaledDoc } from '../cv/ScaledDoc'
+import { getTemplate } from '../cv/templates'
+import '../cv/studio.css'
 
 export function CVDetail() {
   const { id } = useParams()
@@ -14,7 +17,6 @@ export function CVDetail() {
   const [downloading, setDownloading] = useState(null)
   const [duplicating, setDuplicating] = useState(false)
   const [emailModalOpen, setEmailModalOpen] = useState(false)
-  const [previewOpen, setPreviewOpen] = useState(false)
   const [revisions, setRevisions] = useState([])
   const [revisionsOpen, setRevisionsOpen] = useState(false)
   const [reverting, setReverting] = useState(null)
@@ -97,89 +99,84 @@ export function CVDetail() {
   if (loading) return <div className="page"><div className="loading-state"><p>Loading...</p></div></div>
   if (!cv) return <div className="page"><p>CV not found.</p></div>
 
+  const t = getTemplate(cv.template)
+  const fileBase = (cv.full_name || cv.title || 'CV').replace(/[^\p{L}\p{N}]+/gu, '_')
+
   return (
-    <div className="page">
-      <div className="page-header page-header--row">
-        <h1>{cv.title}</h1>
-        <div className="btn-group">
-          <Link to={`/cv/${id}/edit`} className="btn btn-primary"><Pencil size={18} /> Edit</Link>
-          <button type="button" className="btn btn-secondary" onClick={() => setPreviewOpen(true)} title="Preview PDF">
-            <Eye size={18} /> Preview
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={handleDuplicate} disabled={duplicating} title="Duplicate this CV">
-            <Copy size={18} /> {duplicating ? '…' : 'Duplicate'}
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => handleExport('pdf', `${cv.title.replace(/\s/g, '_')}_CV.pdf`)} disabled={!!downloading}>
-            <FileDown size={18} /> {downloading === 'pdf' ? '…' : 'PDF'}
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => handleExport('docx', `${cv.title.replace(/\s/g, '_')}_CV.docx`)} disabled={!!downloading}>
-            <FileDown size={18} /> {downloading === 'docx' ? '…' : 'Word'}
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => setEmailModalOpen(true)}><Mail size={18} /> Send email</button>
-          <button type="button" className="btn btn-secondary" onClick={handleShare} disabled={sharing} title={cv.share_token ? 'Copy link or disable sharing' : 'Enable public sharing'}>
-            <Share2 size={18} /> {cv.share_token ? 'Shared' : 'Share'}
-          </button>
-          <Link to={`/cv/${id}/delete`} className="btn btn-danger"><Trash2 size={18} /> Delete</Link>
+    <div className="dv">
+      <div className="dv-head">
+        <div className="dv-head__text">
+          <Link to="/cv" className="dv-crumb">My CVs</Link>
+          <h1>{cv.title}</h1>
+          <p className="dv-meta">{t.name} template · Updated {new Date(cv.updated_at).toLocaleDateString()}</p>
+        </div>
+        <div className="dv-actions">
+          <Link to={`/cv/${id}/edit`} className="btn btn-secondary"><Pencil size={16} /> Edit</Link>
+          <Link to={`/print/cv/${id}`} className="btn btn-primary"><FileDown size={16} /> Download PDF</Link>
         </div>
       </div>
       <SendEmailModal open={emailModalOpen} onClose={() => setEmailModalOpen(false)} type="cv" id={id} title={cv?.title || 'CV'} />
-      <PdfPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} pdfPath={`/cvs/${id}/export/pdf/`} title={`Preview: ${cv?.title || 'CV'}`} />
-      <p className="meta">Template: {cv.template_display} · Updated {new Date(cv.updated_at).toLocaleDateString()}{cv.share_url && ' · '}<span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>{cv.share_url && (<><Link2 size={12} /><button type="button" className="btn btn-ghost" style={{ padding: '0 0.25rem', fontSize: '0.85rem' }} onClick={copyShareUrl}>Copy share link</button></>)}</span></p>
-      <div className="card card--detail">
-        <h2 className="cv-name">{cv.full_name || 'Name'}</h2>
-        <p className="cv-contact">{[cv.email, cv.phone, cv.location].filter(Boolean).join(' · ')}</p>
-        {cv.summary && (<><h3>Summary</h3><p className="whitespace">{cv.summary}</p></>)}
-        {(cv.experience_structured && cv.experience_structured.length > 0) ? (
-          <><h3>Experience</h3>{cv.experience_structured.map((e, i) => (
-            <div key={i} style={{ marginBottom: '1rem' }}>
-              <strong>{e.role}{e.company ? ` at ${e.company}` : ''}</strong>
-              {(e.start_date || e.end_date) && <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}> ({e.start_date || ''}–{e.current ? 'Present' : (e.end_date || '')})</span>}
-              {e.location && <span style={{ color: 'var(--text-muted)' }}> · {e.location}</span>}
-              {e.bullets && <p className="whitespace" style={{ margin: '0.25rem 0 0 0', paddingLeft: '1rem' }}>{e.bullets.split('\n').map((b, j) => b.trim() && <span key={j}>• {b}<br /></span>)}</p>}
-            </div>
-          ))}</>
-        ) : cv.experience && (<><h3>Experience</h3><p className="whitespace">{cv.experience}</p></>)}
-        {(cv.education_structured && cv.education_structured.length > 0) ? (
-          <><h3>Education</h3>{cv.education_structured.map((e, i) => (
-            <div key={i} style={{ marginBottom: '0.5rem' }}>
-              <strong>{e.degree}{e.institution ? `, ${e.institution}` : ''}</strong>
-              {(e.start_date || e.end_date) && <span style={{ color: 'var(--text-muted)' }}> ({e.start_date}–{e.end_date})</span>}
-              {e.honors && <p className="whitespace" style={{ margin: 0 }}>{e.honors}</p>}
-            </div>
-          ))}</>
-        ) : cv.education && (<><h3>Education</h3><p className="whitespace">{cv.education}</p></>)}
-        {(cv.skills_structured && cv.skills_structured.length > 0) ? (
-          <><h3>Skills</h3><p>{cv.skills_structured.map(s => s.category && s.items ? `${s.category}: ${s.items}` : s.items).filter(Boolean).join(' · ')}</p></>
-        ) : cv.skills && (<><h3>Skills</h3><p className="whitespace">{cv.skills}</p></>)}
-        {cv.certifications?.length > 0 && (<><h3>Certifications</h3><p>{cv.certifications.map(c => `${c.name}${c.issuer ? ` – ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`).join(' · ')}</p></>)}
-        {cv.projects?.length > 0 && (<><h3>Projects</h3>{cv.projects.map((p, i) => <p key={i} className="whitespace">{p.name}{p.description ? ` – ${p.description}` : ''}{p.tech ? ` [${p.tech}]` : ''}</p>)}</>)}
-        {cv.languages?.length > 0 && (<><h3>Languages</h3><p>{cv.languages.map(l => `${l.language} (${l.proficiency || '-'})`).join(', ')}</p></>)}
-        {cv.awards?.length > 0 && (<><h3>Awards</h3><p>{cv.awards.map(a => `${a.name}${a.issuer ? ` – ${a.issuer}` : ''}`).join(' · ')}</p></>)}
-        {cv.references?.length > 0 && (<><h3>References</h3>{cv.references.map((r, i) => <p key={i}>{r.name}, {r.title} at {r.company}{r.email ? ` · ${r.email}` : ''}</p>)}</>)}
-      </div>
-      <section className="version-history">
-        <button type="button" className="btn btn-ghost" onClick={() => setRevisionsOpen(!revisionsOpen)}>
-          <History size={16} /> Version history
-        </button>
-        {revisionsOpen && (
-          <div className="revisions-list">
-            {revisions.length === 0 ? (
-              <p className="muted">No previous versions. Revisions are saved each time you edit.</p>
+
+      <div className="dv-split">
+        <div className="dv-doc">
+          <ScaledDoc markers><CVDocument cv={cv} /></ScaledDoc>
+        </div>
+        <aside className="dv-side">
+          <section className="dv-card">
+            <h2>Export</h2>
+            <Link to={`/print/cv/${id}`} className="dv-item"><FileDown size={17} /><span><strong>PDF</strong><small>Pixel exact, selectable text</small></span></Link>
+            <button type="button" className="dv-item" onClick={() => handleExport('docx', `${fileBase}_CV.docx`)} disabled={!!downloading}>
+              <FileText size={17} /><span><strong>{downloading === 'docx' ? 'Preparing...' : 'Word (.docx)'}</strong><small>Editable in Word or Google Docs</small></span>
+            </button>
+            <button type="button" className="dv-item" onClick={() => setEmailModalOpen(true)}>
+              <Mail size={17} /><span><strong>Send by email</strong><small>Attach it to a message</small></span>
+            </button>
+          </section>
+
+          <section className="dv-card">
+            <h2>Share link</h2>
+            {cv.share_url ? (
+              <>
+                <div className="dv-share">
+                  <input readOnly value={cv.share_url} onFocus={e => e.target.select()} aria-label="Share link" />
+                  <button type="button" className="btn btn-secondary btn--sm" onClick={copyShareUrl}><Link2 size={14} /> Copy</button>
+                </div>
+                <button type="button" className="dv-link" onClick={handleShare} disabled={sharing}>Turn off sharing</button>
+              </>
             ) : (
-              <ul>
-                {revisions.map(rev => (
-                  <li key={rev.id} className="revision-item">
-                    <span>{new Date(rev.created_at).toLocaleString()}</span>
-                    <button type="button" className="btn btn-secondary btn--sm" onClick={() => handleRevert(rev.id)} disabled={reverting === rev.id}>
-                      <RotateCcw size={14} /> {reverting === rev.id ? '…' : 'Revert'}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <p className="dv-note">Anyone with the link can view this CV. You can turn it off any time.</p>
+                <button type="button" className="btn btn-secondary btn--sm" onClick={handleShare} disabled={sharing}><Share2 size={14} /> Create share link</button>
+              </>
             )}
-          </div>
-        )}
-      </section>
+          </section>
+
+          <section className="dv-card">
+            <h2>More</h2>
+            <Link to={`/cv/${id}/edit`} state={{ tab: 'design' }} className="dv-item dv-item--plain"><Palette size={17} /><span>Change template or colours</span></Link>
+            <Link to={`/letters/new?template=${cv.template}${cv.design?.accent ? `&accent=${encodeURIComponent(cv.design.accent)}` : ''}&cv=${id}`} className="dv-item dv-item--plain"><Mail size={17} /><span>Write a matching cover letter</span></Link>
+            <button type="button" className="dv-item dv-item--plain" onClick={handleDuplicate} disabled={duplicating}><Copy size={17} /><span>{duplicating ? 'Duplicating...' : 'Duplicate for another job'}</span></button>
+            <button type="button" className="dv-item dv-item--plain" onClick={() => setRevisionsOpen(!revisionsOpen)}><History size={17} /><span>Version history</span></button>
+            {revisionsOpen && (
+              <div className="dv-revs">
+                {revisions.length === 0 ? <p className="dv-note">No earlier versions yet. One is saved each time you save.</p> : (
+                  <ul>
+                    {revisions.map(rev => (
+                      <li key={rev.id}>
+                        <span>{new Date(rev.created_at).toLocaleString()}</span>
+                        <button type="button" className="btn btn-ghost btn--sm" onClick={() => handleRevert(rev.id)} disabled={reverting === rev.id}>
+                          <RotateCcw size={14} /> {reverting === rev.id ? '...' : 'Restore'}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            <Link to={`/cv/${id}/delete`} className="dv-item dv-item--plain dv-item--danger"><Trash2 size={17} /><span>Delete CV</span></Link>
+          </section>
+        </aside>
+      </div>
     </div>
   )
 }

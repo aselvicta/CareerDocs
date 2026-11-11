@@ -33,7 +33,7 @@ export function LetterList() {
     <div className="page">
       <div className="page-header page-header--row">
         <h1>My Letters</h1>
-        <Link to="/letters/new" className="btn btn-primary"><Plus size={18} /> New letter</Link>
+        <Link to="/letters/templates" className="btn btn-primary"><Plus size={18} /> New letter</Link>
       </div>
       {letters.length ? (
         <div className={`card-list${loading ? ' card-list--busy' : ''}`}>
@@ -65,7 +65,7 @@ export function LetterList() {
         <div className="empty-block">
           <Mail size={48} className="empty-block__icon" />
           <p>No letters yet.</p>
-          <Link to="/letters/new" className="btn btn-primary">Create a letter</Link>
+          <Link to="/letters/templates" className="btn btn-primary">Create a letter</Link>
         </div>
       )}
       <Pagination page={page} pages={pages} total={total} onPage={setPage} noun="letters" busy={loading} />

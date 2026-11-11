@@ -1,106 +1,122 @@
-import { Link } from 'react-router-dom'
-import { FileText, Sparkles, Layout, Minus, Briefcase, ArrowRight } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
+import { CVDocument } from '../cv/CVDocument'
+import { LetterDocument } from '../cv/LetterDocument'
+import { ScaledDoc } from '../cv/ScaledDoc'
+import { ACCENTS, CATEGORIES, TEMPLATES } from '../cv/templates'
+import { SAMPLE_CV, SAMPLE_LETTER } from '../cv/sample'
+import '../cv/studio.css'
 
-const TEMPLATES = [
-  {
-    id: 'classic',
-    name: 'Classic',
-    description: 'Timeless, clear structure. Ideal for traditional industries and senior roles.',
-    icon: FileText,
-    preview: 'classic',
-    accent: '#3b82f6',
-  },
-  {
-    id: 'modern',
-    name: 'Modern',
-    description: 'Clean lines and subtle hierarchy. Perfect for tech and creative roles.',
-    icon: Sparkles,
-    preview: 'modern',
-    accent: '#8b5cf6',
-  },
-  {
-    id: 'minimal',
-    name: 'Minimal',
-    description: 'Maximum impact with minimal clutter. Best for design and UX portfolios.',
-    icon: Minus,
-    preview: 'minimal',
-    accent: '#10b981',
-  },
-  {
-    id: 'professional',
-    name: 'Professional',
-    description: 'Structured and formal. Suits finance, law, and corporate positions.',
-    icon: Briefcase,
-    preview: 'professional',
-    accent: '#f59e0b',
-  },
-]
+const CATEGORY_LABEL = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]))
 
-function TemplatePreview({ type }) {
-  const isClassic = type === 'classic'
-  const isModern = type === 'modern'
-  const isMinimal = type === 'minimal'
-  const isPro = type === 'professional'
+/**
+ * Template gallery for CVs (/cv/templates) and cover letters (/letters/templates).
+ * Thumbnails are the real renderer with sample content, so what you pick is what you get.
+ */
+export function CVTemplates({ kind = 'cv' }) {
+  const [params, setParams] = useSearchParams()
+  const category = params.get('category') || 'all'
+  const [accent, setAccent] = useState(null)
+  const isLetter = kind === 'letter'
+
+  const shown = useMemo(
+    () => (category === 'all' ? TEMPLATES : TEMPLATES.filter(t => t.category === category)),
+    [category],
+  )
+  const counts = useMemo(() => {
+    const c = { all: TEMPLATES.length }
+    for (const t of TEMPLATES) c[t.category] = (c[t.category] || 0) + 1
+    return c
+  }, [])
+
+  function hrefFor(t) {
+    const q = new URLSearchParams({ template: t.id })
+    if (accent) q.set('accent', accent)
+    return `${isLetter ? '/letters/new' : '/cv/new'}?${q}`
+  }
+
   return (
-    <div className={`template-preview template-preview--${type}`}>
-      <div className="tp-header">
-        <div className="tp-name">Jane Doe</div>
-        <div className="tp-contact">jane@email.com · +1 234 567 890</div>
+    <div className="tg">
+      <div className="tg-head">
+        <div>
+          <p className="tg-kicker">{isLetter ? 'Cover letter templates' : 'CV templates'}</p>
+          <h1 className="tg-title">{isLetter ? 'Pick a letter that matches your CV' : 'Pick a template. Change it any time.'}</h1>
+          <p className="tg-sub">
+            {isLetter
+              ? 'Every letter design pairs with the CV template of the same name, so your application looks like one set.'
+              : `${TEMPLATES.length} designs, all exported as clean, selectable text that applicant tracking systems can read. Your content carries over when you switch.`}
+          </p>
+        </div>
+        <Link to={isLetter ? '/letters' : '/cv'} className="btn btn-ghost tg-back"><ArrowLeft size={16} /> {isLetter ? 'My letters' : 'My CVs'}</Link>
       </div>
-      {(isClassic || isPro) && <div className="tp-section">Summary</div>}
-      <div className="tp-body">
-        <div className="tp-line tp-line--short" />
-        <div className="tp-line" />
-        <div className="tp-line tp-line--short" />
+
+      <div className="tg-toolbar">
+        <div className="tg-tabs" role="tablist" aria-label="Template category">
+          {CATEGORIES.map(c => (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={category === c.id}
+              className={`tg-tab ${category === c.id ? 'is-active' : ''}`}
+              onClick={() => setParams(c.id === 'all' ? {} : { category: c.id }, { replace: true })}
+            >
+              {c.label} <span className="tg-tab__count">{counts[c.id] || 0}</span>
+            </button>
+          ))}
+        </div>
+        <div className="tg-colours" aria-label="Preview colour">
+          <span className="tg-colours__label">Colour</span>
+          <button type="button" className={`swatch swatch--auto ${!accent ? 'is-active' : ''}`} onClick={() => setAccent(null)} title="Template default">
+            <span>A</span>
+          </button>
+          {ACCENTS.slice(1, 9).map(a => (
+            <button
+              key={a.hex}
+              type="button"
+              className={`swatch ${accent === a.hex ? 'is-active' : ''}`}
+              style={{ '--swatch': a.hex }}
+              onClick={() => setAccent(a.hex)}
+              title={a.name}
+              aria-label={a.name}
+            />
+          ))}
+        </div>
       </div>
-      <div className="tp-section">Experience</div>
-      <div className="tp-body">
-        <div className="tp-line" />
-        <div className="tp-line tp-line--short" />
+
+      <div className="tg-grid">
+        {shown.map(t => (
+          <article key={t.id} className="tg-card">
+            <Link to={hrefFor(t)} className="tg-card__stage" aria-label={`Use the ${t.name} template`}>
+              <div className="tg-card__page">
+                <ScaledDoc clip>
+                  {isLetter
+                    ? <LetterDocument letter={SAMPLE_LETTER} template={t.id} design={accent ? { accent } : {}} />
+                    : <CVDocument cv={SAMPLE_CV} template={t.id} design={accent ? { accent } : {}} />}
+                </ScaledDoc>
+              </div>
+              <span className="tg-card__cta">Use this template</span>
+            </Link>
+            <div className="tg-card__meta">
+              <div className="tg-card__row">
+                <h2>{t.name}</h2>
+                <span className="tg-card__cat">{CATEGORY_LABEL[t.category]}</span>
+              </div>
+              <p>{t.desc}</p>
+              <div className="tg-card__facts">
+                <span>{t.aside ? 'Two column' : 'One column'}</span>
+                {t.photo && <span>Photo optional</span>}
+                {t.category === 'ats' && <span>Best for ATS</span>}
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
-      {!isMinimal && (
-        <>
-          <div className="tp-section">Education</div>
-          <div className="tp-line tp-line--short" />
-        </>
-      )}
     </div>
   )
 }
 
-export function CVTemplates() {
-  return (
-    <div className="page page--templates">
-      <div className="page-header">
-        <h1>Choose a CV template</h1>
-        <p className="subtitle">Pick a style that fits your industry. You can change it anytime.</p>
-      </div>
-      <div className="template-grid">
-        {TEMPLATES.map((t) => {
-          const Icon = t.icon
-          return (
-            <div key={t.id} className="template-card" style={{ '--accent': t.accent }}>
-              <div className="template-card__preview">
-                <TemplatePreview type={t.preview} />
-              </div>
-              <div className="template-card__body">
-                <div className="template-card__icon">
-                  <Icon size={24} strokeWidth={1.5} />
-                </div>
-                <h3>{t.name}</h3>
-                <p>{t.description}</p>
-                <span className="template-card__hint">Click below to use</span>
-                <Link to={`/cv/new?template=${t.id}`} className="btn btn-primary btn--template">
-                  Use this template <ArrowRight size={16} />
-                </Link>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-      <p className="template-footer">
-        <Link to="/cv" className="link-muted">← Back to my CVs</Link>
-      </p>
-    </div>
-  )
+export function LetterTemplates() {
+  return <CVTemplates kind="letter" />
 }

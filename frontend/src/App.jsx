@@ -20,6 +20,11 @@ const OAuthCallback = named(() => import('./pages/OAuthCallback'), 'OAuthCallbac
 const Dashboard = named(() => import('./pages/Dashboard'), 'Dashboard')
 const CVList = named(() => import('./pages/CVList'), 'CVList')
 const CVTemplates = named(() => import('./pages/CVTemplates'), 'CVTemplates')
+const LetterTemplates = named(() => import('./pages/CVTemplates'), 'LetterTemplates')
+const PublicTemplates = named(() => import('./pages/PublicTemplates'), 'PublicTemplates')
+const CVPrint = named(() => import('./pages/PrintView'), 'CVPrint')
+const LetterPrint = named(() => import('./pages/PrintView'), 'LetterPrint')
+const PublicCVPrint = named(() => import('./pages/PrintView'), 'PublicCVPrint')
 const CVForm = named(() => import('./pages/CVForm'), 'CVForm')
 const CVDetail = named(() => import('./pages/CVDetail'), 'CVDetail')
 const CVDelete = named(() => import('./pages/CVDelete'), 'CVDelete')
@@ -61,6 +66,11 @@ function AppRoutes() {
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/view/cv/:token" element={<CVPublic />} />
+      <Route path="/view/cv/:token/print" element={<PublicCVPrint />} />
+      <Route path="/templates" element={user ? <Navigate to="/cv/templates" replace /> : <PublicTemplates />} />
+      {/* Print views: just the document, used to save a pixel-exact PDF */}
+      <Route path="/print/cv/:id" element={<ProtectedRoute><CVPrint /></ProtectedRoute>} />
+      <Route path="/print/letter/:id" element={<ProtectedRoute><LetterPrint /></ProtectedRoute>} />
       {/* Admin console: separate layout + its own login, outside the client app shell */}
       <Route path="/admin" element={<AdminGate />}>
         <Route index element={<AdminOverview />} />
@@ -79,6 +89,7 @@ function AppRoutes() {
         <Route path="cv/:id/edit" element={<CVForm />} />
         <Route path="cv/:id/delete" element={<CVDelete />} />
         <Route path="letters" element={<LetterList />} />
+        <Route path="letters/templates" element={<LetterTemplates />} />
         <Route path="letters/new" element={<LetterForm />} />
         <Route path="letters/:id" element={<LetterDetail />} />
         <Route path="letters/:id/edit" element={<LetterForm />} />
