@@ -29,8 +29,27 @@ def _strip_markdown(text: str) -> str:
     return text.strip()
 
 
+NO_DASH_RULE = (
+    ' Never use em dashes or en dashes as punctuation in sentences; '
+    'use commas, colons, periods or parentheses instead.'
+)
+
+
+def _strip_dashes(text: str) -> str:
+    """Remove em/en dashes used as sentence punctuation (keep numeric ranges like 2019-2021)."""
+    if not text:
+        return text
+    text = re.sub(r'(\d)\s*[\u2014\u2013]\s*(\d)', r'\1-\2', text)
+    text = re.sub(r'(\S)[\u2014\u2013](\S)', r'\1-\2', text)  # unspaced: ranges like Jan 2020-Dec 2021
+    text = re.sub(r'\s*\u2014\s*', ', ', text)
+    text = re.sub(r'\s+\u2013\s+', ', ', text)
+    text = re.sub(r',\s*,', ',', text)
+    return re.sub(r',\s*$', '', text, flags=re.M).strip()
+
+
 def _call_deepseek(system_prompt: str, user_content: str, max_tokens: int = 1500) -> str:
     """Call DeepSeek chat completions. Returns assistant message content or empty string on error."""
+    system_prompt = system_prompt + NO_DASH_RULE
     api_key = getattr(settings, 'DOCS_GENERATOR_API_KEY', None) or ''
     if not api_key:
         logger.warning('DOCS_GENERATOR_API_KEY not set; skipping AI call')
@@ -58,7 +77,8 @@ def _call_deepseek(system_prompt: str, user_content: str, max_tokens: int = 1500
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             result = json.loads(resp.read().decode())
-            return (result.get('choices') or [{}])[0].get('message', {}).get('content', '').strip()
+            content = (result.get('choices') or [{}])[0].get('message', {}).get('content', '').strip()
+            return _strip_dashes(content)
     except urllib.error.HTTPError as e:
         body = e.read().decode() if e.fp else ''
         logger.exception('DeepSeek API HTTP error %s: %s', e.code, body)
@@ -150,7 +170,7 @@ def deepseek_tailor_cv(cv_data: dict, job_description: str) -> str:
         'You are a career coach. Given a CV and job description, suggest 3–5 specific improvements to tailor the CV. '
         'Be brief: one short paragraph or a few bullet points. Focus on the top changes only (summary tweaks, skills to add, '
         'keywords to include). '
-        'CRITICAL: Output plain text only. No markdown whatsoever—no asterisks (** or *), no hashtags (#), no bold/italic. '
+        'CRITICAL: Output plain text only. No markdown whatsoever: no asterisks (** or *), no hashtags (#), no bold/italic. '
         'Use simple line breaks and hyphens for lists. Write like natural prose.'
     )
     user_content = f"Job description:\n{job_description}\n\n---\n\nCV content:\n{json.dumps(cv_data, indent=2)}"
@@ -186,7 +206,7 @@ def deepseek_ats_analyze(cv_data: dict, job_description: str) -> str:
         'Give: (1) A score out of 10 in one short sentence. (2) 2–3 missing keywords. '
         '(3) 2–3 quick structure tips. (4) 2–4 actionable improvements. '
         'Keep total output under 150 words. '
-        'CRITICAL: Plain text only. No markdown—no asterisks (** or *), no hashtags (#), no bold/italic. '
+        'CRITICAL: Plain text only. No markdown: no asterisks (** or *), no hashtags (#), no bold/italic. '
         'Use simple line breaks and hyphens for lists. Write like natural prose.'
     )
     user_content = f"Job Description:\n{job_description}\n\n---\n\nCV Content:\n{json.dumps(cv_data, indent=2)}"

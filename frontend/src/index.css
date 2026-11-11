@@ -1151,3 +1151,15 @@ h1, h2, h3 { margin-top: 0; }
 .pager { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
 .pager__info { font-size: 0.875rem; }
 .card-list--busy { opacity: 0.6; transition: opacity var(--transition); pointer-events: none; }
+
+/* ----- Brand wordmark ----- */
+.wordmark { font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+.wordmark__career { color: #0f2747; }
+.wordmark__docs { color: #2563eb; }
+[data-theme="dark"] .wordmark__career { color: var(--text); }
+[data-theme="dark"] .wordmark__docs { color: #60a5fa; }
+.wordmark--auth { display: block; text-align: center; font-size: clamp(1.6rem, 4vw, 2.1rem); margin-top: 0.6rem; }
+/* round mark sits on a white disc in dark mode so the navy stays visible */
+[data-theme="dark"] .app-logo { background: #fff; border-radius: 50%; }
+.app-logo--auth { max-height: clamp(5rem, 22vmin, 7rem); }
+.auth-brand-logo { flex-direction: column; }

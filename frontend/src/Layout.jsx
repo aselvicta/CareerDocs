@@ -15,7 +15,7 @@ import {
   X,
   ShieldCheck,
 } from 'lucide-react'
-import { AppLogo } from './AppLogo'
+import { AppLogo, Wordmark } from './AppLogo'
 import { useAuth } from './AuthContext'
 import { useTheme } from './ThemeContext'
 import { EmailAssistant } from './EmailAssistant'
@@ -88,7 +88,7 @@ export function Layout() {
         <div className="nav__backdrop" aria-hidden="true" onClick={closeMenu} />
         <div className="nav__inner">
           <Link to="/" className="nav__brand" onClick={closeMenu}>
-            <AppLogo className="app-logo--nav" /> <span className="nav__brand-text">Career Docs</span>
+            <AppLogo className="app-logo--nav" alt="" /> <Wordmark className="nav__brand-text" />
           </Link>
 
           <nav className="nav__links" aria-label="Main">{links}</nav>

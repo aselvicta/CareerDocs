@@ -84,15 +84,15 @@ export const PAGE_LABELS = {
 export const pageLabel = path => (PAGE_LABELS[path] ? `${PAGE_LABELS[path]} (${path})` : path)
 
 const nf = new Intl.NumberFormat()
-export const fmtNum = n => (n == null ? '—' : nf.format(n))
+export const fmtNum = n => (n == null ? '0' : nf.format(n))
 
 export function fmtDate(iso) {
-  if (!iso) return '—'
+  if (!iso) return 'Never'
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 export function fmtDateTime(iso) {
-  if (!iso) return '—'
+  if (!iso) return 'Never'
   return new Date(iso).toLocaleString(undefined, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })

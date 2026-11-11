@@ -68,12 +68,12 @@ DOCS_GENERATOR_API_KEY = os.environ.get('docs_generator_api_key', '')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
 # Accounts that always get admin (staff + superuser) access. Comma-separated emails.
-# Applied on server start and whenever one of these accounts signs in — no shell needed.
+# Applied on server start and whenever one of these accounts signs in, so no shell is needed.
 ADMIN_EMAILS = {
     e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip()
 }
 
-# Google OAuth — https://console.cloud.google.com/apis/credentials
+# Google OAuth: https://console.cloud.google.com/apis/credentials
 # Local (Vite proxy): redirect can be http://localhost:5173/api/auth/google/callback
 # Vercel + Render: set GOOGLE_OAUTH_REDIRECT_URI to your *backend* URL, e.g.
 # https://your-service.onrender.com/api/auth/google/callback

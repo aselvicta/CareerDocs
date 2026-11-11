@@ -80,7 +80,7 @@ export function EmailComposer() {
     setSending(true)
     const form = new FormData()
     form.append('to_email', toEmail.trim())
-    form.append('subject', subject.trim() || 'Message from Career Docs')
+    form.append('subject', subject.trim() || 'Message from CareerDocs')
     form.append('body', body.trim() || 'Please see the attached documents.')
     form.append('attachments', JSON.stringify(selectedDocs.map(d => ({ type: d.type, id: d.id }))))
     files.forEach((f, i) => form.append('files', f, f.name || `file_${i}`))
@@ -159,7 +159,7 @@ export function EmailComposer() {
                 <input
                   type="checkbox"
                   checked={selectedDocs.some(d => d.type === 'letter' && d.id === l.id)}
-                  onChange={() => toggleDoc('letter', l.id, l.letter_type_display + (l.title ? ` — ${l.title}` : ''))}
+                  onChange={() => toggleDoc('letter', l.id, l.letter_type_display + (l.title ? `: ${l.title}` : ''))}
                 />
                 <span>{l.letter_type_display}{l.title ? `: ${l.title}` : ''}</span>
               </label>

@@ -103,10 +103,10 @@ export function AdminUserDetail() {
           <div className="section-header"><h2>Profile</h2></div>
           <table className="detail-table">
             <tbody>
-              <tr><td className="detail-table__label">Full name</td><td>{p.full_name || '—'}</td></tr>
-              <tr><td className="detail-table__label">Contact email</td><td>{p.email || '—'}</td></tr>
-              <tr><td className="detail-table__label">Phone</td><td>{p.phone || '—'}</td></tr>
-              <tr><td className="detail-table__label">Location</td><td>{p.location || '—'}</td></tr>
+              <tr><td className="detail-table__label">Full name</td><td>{p.full_name || 'Not set'}</td></tr>
+              <tr><td className="detail-table__label">Contact email</td><td>{p.email || 'Not set'}</td></tr>
+              <tr><td className="detail-table__label">Phone</td><td>{p.phone || 'Not set'}</td></tr>
+              <tr><td className="detail-table__label">Location</td><td>{p.location || 'Not set'}</td></tr>
               <tr><td className="detail-table__label">Username</td><td>{u.username}</td></tr>
               <tr><td className="detail-table__label">User ID</td><td>{u.id}</td></tr>
             </tbody>

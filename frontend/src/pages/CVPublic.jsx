@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { AppLogo } from '../AppLogo'
+import { AppLogo, Wordmark } from '../AppLogo'
 import { api } from '../api'
 
 export function CVPublic() {
@@ -21,13 +21,13 @@ export function CVPublic() {
   }, [token])
 
   if (loading) return <div className="page"><div className="loading-state"><p>Loading...</p></div></div>
-  if (error || !cv) return <div className="page"><div className="card"><p className="muted">{error || 'Not found.'}</p><Link to="/">Go to Career Docs</Link></div></div>
+  if (error || !cv) return <div className="page"><div className="card"><p className="muted">{error || 'Not found.'}</p><Link to="/">Go to CareerDocs</Link></div></div>
 
   return (
     <div className="page">
       <div className="page-header page-header--row" style={{ marginBottom: '1rem' }}>
         <Link to="/" className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-          <AppLogo className="app-logo--public" /> Career Docs
+          <AppLogo className="app-logo--public" alt="" /> <Wordmark />
         </Link>
         <span className="meta">Public view</span>
       </div>

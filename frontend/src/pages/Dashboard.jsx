@@ -75,7 +75,7 @@ export function Dashboard() {
             {letters.map(l => (
               <li key={l.id}>
                 <Link to={`/letters/${l.id}`} className="item-list__link">
-                  <span className="item-list__title">{l.letter_type_display}{l.title ? ` — ${l.title}` : ''}</span>
+                  <span className="item-list__title">{l.letter_type_display}{l.title ? `: ${l.title}` : ''}</span>
                   <span className="item-list__meta">{new Date(l.updated_at).toLocaleDateString()}</span>
                 </Link>
               </li>

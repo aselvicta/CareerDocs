@@ -124,7 +124,7 @@ export function ApplicationForm() {
           <label>Cover letter used</label>
           <select value={form.letter != null ? String(form.letter) : ''} onChange={e => update('letter', e.target.value ? Number(e.target.value) : null)} className="form-control">
             <option value="">None</option>
-            {letters.map(l => <option key={l.id} value={l.id}>{l.letter_type_display}{l.title ? ` — ${l.title}` : ''}</option>)}
+            {letters.map(l => <option key={l.id} value={l.id}>{l.letter_type_display}{l.title ? `: ${l.title}` : ''}</option>)}
           </select>
         </div>
         <div className="form-group">

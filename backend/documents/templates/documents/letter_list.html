@@ -6,8 +6,8 @@
 {% if letters %}
   {% for letter in letters %}
   <div class="card">
-    <h2 style="margin-top:0;"><a href="{% url 'documents:letter_detail' letter.pk %}">{{ letter.get_letter_type_display }}{% if letter.title %} — {{ letter.title }}{% endif %}</a></h2>
-    <p class="muted">To: {{ letter.recipient_name|default:"—" }} · {{ letter.company|default:"" }} · Updated {{ letter.updated_at|date:"M d, Y" }}</p>
+    <h2 style="margin-top:0;"><a href="{% url 'documents:letter_detail' letter.pk %}">{{ letter.get_letter_type_display }}{% if letter.title %}: {{ letter.title }}{% endif %}</a></h2>
+    <p class="muted">To: {{ letter.recipient_name|default:"Not set" }} · {{ letter.company|default:"" }} · Updated {{ letter.updated_at|date:"M d, Y" }}</p>
     <p>
       <a href="{% url 'documents:letter_edit' letter.pk %}" class="btn btn-secondary">Edit</a>
       <a href="{% url 'documents:letter_export_pdf' letter.pk %}" class="btn btn-secondary">Export PDF</a>

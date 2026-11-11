@@ -239,7 +239,7 @@ def _build_cv_pdf_classic(cv) -> io.BytesIO:
         _classic_section(story, s, 'Certifications')
         cert_lines = []
         for c in cv.certifications:
-            line = (c.get('name') or '') + (f" – {c.get('issuer', '')}" if c.get('issuer') else '') + (f" ({c.get('date', '')})" if c.get('date') else '')
+            line = (c.get('name') or '') + (f", {c.get('issuer', '')}" if c.get('issuer') else '') + (f" ({c.get('date', '')})" if c.get('date') else '')
             if line.strip():
                 cert_lines.append(line)
         if cert_lines:
@@ -249,7 +249,7 @@ def _build_cv_pdf_classic(cv) -> io.BytesIO:
         _classic_section(story, s, 'Projects')
         proj_lines = []
         for p in cv.projects:
-            line = (p.get('name') or '') + (f" – {p.get('description', '')}" if p.get('description') else '')
+            line = (p.get('name') or '') + (f", {p.get('description', '')}" if p.get('description') else '')
             if p.get('tech'):
                 line += f" [{p.get('tech')}]"
             if line.strip():
@@ -265,7 +265,7 @@ def _build_cv_pdf_classic(cv) -> io.BytesIO:
 
     if cv.awards:
         _classic_section(story, s, 'Awards')
-        award_lines = [(a.get('name') or '') + (f" – {a.get('issuer', '')}" if a.get('issuer') else '') for a in cv.awards if a.get('name')]
+        award_lines = [(a.get('name') or '') + (f", {a.get('issuer', '')}" if a.get('issuer') else '') for a in cv.awards if a.get('name')]
         if award_lines:
             story.append(Paragraph(_safe_para('\n'.join(award_lines)), s['Normal']))
 
@@ -336,7 +336,7 @@ def build_cv_pdf(cv) -> io.BytesIO:
         story.append(Paragraph('Certifications', s['DocSection']))
         cert_lines = []
         for c in cv.certifications:
-            line = (c.get('name') or '') + (f" – {c.get('issuer', '')}" if c.get('issuer') else '') + (f" ({c.get('date', '')})" if c.get('date') else '')
+            line = (c.get('name') or '') + (f", {c.get('issuer', '')}" if c.get('issuer') else '') + (f" ({c.get('date', '')})" if c.get('date') else '')
             if line.strip():
                 cert_lines.append(line)
         story.append(Paragraph(_safe_para('\n'.join(cert_lines)), s['Normal']))
@@ -344,7 +344,7 @@ def build_cv_pdf(cv) -> io.BytesIO:
         story.append(Paragraph('Projects', s['DocSection']))
         proj_lines = []
         for p in cv.projects:
-            line = (p.get('name') or '') + (f" – {p.get('description', '')}" if p.get('description') else '')
+            line = (p.get('name') or '') + (f", {p.get('description', '')}" if p.get('description') else '')
             if p.get('tech'):
                 line += f" [{p.get('tech')}]"
             if line.strip():
@@ -356,7 +356,7 @@ def build_cv_pdf(cv) -> io.BytesIO:
         story.append(Paragraph(_safe_para(', '.join(lang_lines)), s['Normal']))
     if cv.awards:
         story.append(Paragraph('Awards', s['DocSection']))
-        award_lines = [(a.get('name') or '') + (f" – {a.get('issuer', '')}" if a.get('issuer') else '') for a in cv.awards if a.get('name')]
+        award_lines = [(a.get('name') or '') + (f", {a.get('issuer', '')}" if a.get('issuer') else '') for a in cv.awards if a.get('name')]
         story.append(Paragraph(_safe_para('\n'.join(award_lines)), s['Normal']))
     if cv.references:
         story.append(Paragraph('References', s['DocSection']))

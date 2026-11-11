@@ -1,9 +1,8 @@
-import logoUrl from './assets/logo.png'
+import logoUrl from './assets/logo-mark.png'
 
 /**
- * Brand mark from `src/assets/logo.png`.
- * Prefer class names: `app-logo--auth`, `app-logo--nav`, `app-logo--public` (see index.css).
- * Optional `size` / `height` set inline max-height for one-off use.
+ * Brand mark (the "C" + document icon). Pair with <Wordmark /> where the name should be written.
+ * Size classes: `app-logo--nav`, `app-logo--auth`, `app-logo--public` (see index.css).
  */
 export function AppLogo({ className = '', size, height, style, alt = '', ...rest }) {
   const maxH = size ?? height
@@ -18,4 +17,11 @@ export function AppLogo({ className = '', size, height, style, alt = '', ...rest
   )
 }
 
-export { logoUrl }
+/** Two-tone "CareerDocs" name written next to the mark. */
+export function Wordmark({ className = '' }) {
+  return (
+    <span className={`wordmark ${className}`.trim()}>
+      <span className="wordmark__career">Career</span><span className="wordmark__docs">Docs</span>
+    </span>
+  )
+}

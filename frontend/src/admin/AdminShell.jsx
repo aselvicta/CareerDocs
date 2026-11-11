@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import {
   BarChart3, Users, Activity, FolderOpen, ShieldCheck, ShieldX, ArrowLeftRight, LogOut, Sun, Moon,
 } from 'lucide-react'
-import { AppLogo } from '../AppLogo'
+import { AppLogo, Wordmark } from '../AppLogo'
 import { useAuth } from '../AuthContext'
 import { useTheme } from '../ThemeContext'
 import { LoadingState } from '../LoadingState'
@@ -54,7 +54,7 @@ function AdminLayout() {
         <Link to="/admin" className="admin-side__brand">
           <AppLogo className="app-logo--nav" alt="" />
           <span>
-            <span className="admin-side__name">Career Docs</span>
+            <span className="admin-side__name"><Wordmark /></span>
             <span className="admin-side__tag"><ShieldCheck size={12} aria-hidden /> Admin</span>
           </span>
         </Link>

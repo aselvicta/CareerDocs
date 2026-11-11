@@ -33,9 +33,9 @@ export function ActivityTable({ events, showUser = true }) {
                   {eventLabel(e.event)}
                   {failed && <span className="pill pill--danger" title={`HTTP ${e.status_code}`}>failed {e.status_code}</span>}
                 </td>
-                <td className="truncate"><code>{e.path || '—'}</code>{e.referrer && <span className="muted"> from {e.referrer}</span>}</td>
-                <td className="nowrap muted">{parseUA(e.user_agent) || '—'}</td>
-                <td className="nowrap muted">{e.ip || '—'}</td>
+                <td className="truncate"><code>{e.path || 'Not set'}</code>{e.referrer && <span className="muted"> from {e.referrer}</span>}</td>
+                <td className="nowrap muted">{parseUA(e.user_agent) || 'Not set'}</td>
+                <td className="nowrap muted">{e.ip || 'Not set'}</td>
               </tr>
             )
           })}

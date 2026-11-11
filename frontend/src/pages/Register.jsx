@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, UserPlus, Sparkles } from 'lucide-react'
-import { AppLogo } from '../AppLogo'
+import { AppLogo, Wordmark } from '../AppLogo'
 import { GoogleAuthButton } from '../GoogleAuthButton'
 import { useAuth } from '../AuthContext'
 import { useToast } from '../ToastContext'
@@ -49,7 +49,8 @@ export function Register() {
       <div className="auth-layout">
         <div className="auth-layout__brand">
           <div className="auth-brand-logo">
-            <AppLogo className="app-logo--auth" alt="Career Docs" />
+            <AppLogo className="app-logo--auth" alt="" />
+            <Wordmark className="wordmark--auth" />
           </div>
           <p className="tagline">Build CVs and letters. Use AI to improve wording. Export or send by email.</p>
         </div>

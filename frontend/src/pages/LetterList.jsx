@@ -41,9 +41,9 @@ export function LetterList() {
             <article key={l.id} className="card card--hover">
               <div className="card__main">
                 <h2 className="card__title">
-                  <Link to={`/letters/${l.id}`}><Mail size={20} /> {l.letter_type_display}{l.title ? ` — ${l.title}` : ''}</Link>
+                  <Link to={`/letters/${l.id}`}><Mail size={20} /> {l.letter_type_display}{l.title ? `: ${l.title}` : ''}</Link>
                 </h2>
-                <p className="card__meta">To: {l.recipient_name || '—'} · {l.company || ''} · {new Date(l.updated_at).toLocaleDateString()}</p>
+                <p className="card__meta">To: {l.recipient_name || 'Not set'} · {l.company || ''} · {new Date(l.updated_at).toLocaleDateString()}</p>
               </div>
               <div className="card__actions">
                 <Link to={`/letters/${l.id}/edit`} className="btn btn-ghost btn-sm"><Pencil size={14} /> Edit</Link>
@@ -53,7 +53,7 @@ export function LetterList() {
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleExport(l.id, 'docx', `${l.letter_type_display.replace(/\s/g, '_')}_${l.id}.docx`)} disabled={downloading === `${l.id}-docx`}>
                   <FileDown size={14} /> {downloading === `${l.id}-docx` ? '…' : 'Word'}
                 </button>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEmailModal({ open: true, id: l.id, title: l.letter_type_display + (l.title ? ` — ${l.title}` : '') })}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEmailModal({ open: true, id: l.id, title: l.letter_type_display + (l.title ? `: ${l.title}` : '') })}>
                   <Send size={14} /> Send email
                 </button>
                 <Link to={`/letters/${l.id}/delete`} className="btn btn-ghost btn-sm btn-danger"><Trash2 size={14} /> Delete</Link>

@@ -9,7 +9,7 @@ const HIDDEN = new Set(['id', '_owner', 'share_token', 'user'])
 const KIND_NAME = { cvs: 'CV', letters: 'letter', applications: 'application' }
 
 function Value({ v }) {
-  if (v == null || v === '' || (Array.isArray(v) && !v.length)) return <span className="muted">—</span>
+  if (v == null || v === '' || (Array.isArray(v) && !v.length)) return <span className="muted">Not set</span>
   if (typeof v === 'boolean') return v ? 'Yes' : 'No'
   if (Array.isArray(v)) {
     return (

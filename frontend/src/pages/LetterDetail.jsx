@@ -74,7 +74,7 @@ export function LetterDetail() {
   return (
     <div className="page">
       <div className="page-header page-header--row">
-        <h1>{letter.letter_type_display}{letter.title ? ` — ${letter.title}` : ''}</h1>
+        <h1>{letter.letter_type_display}{letter.title ? `: ${letter.title}` : ''}</h1>
         <div className="btn-group">
           <Link to={`/letters/${id}/edit`} className="btn btn-primary"><Pencil size={18} /> Edit</Link>
           <button type="button" className="btn btn-secondary" onClick={() => setPreviewOpen(true)} title="Preview PDF">
@@ -93,7 +93,7 @@ export function LetterDetail() {
           <Link to={`/letters/${id}/delete`} className="btn btn-danger"><Trash2 size={18} /> Delete</Link>
         </div>
       </div>
-      <SendEmailModal open={emailModalOpen} onClose={() => setEmailModalOpen(false)} type="letter" id={id} title={letter?.letter_type_display + (letter?.title ? ` — ${letter.title}` : '') || 'Letter'} />
+      <SendEmailModal open={emailModalOpen} onClose={() => setEmailModalOpen(false)} type="letter" id={id} title={letter?.letter_type_display + (letter?.title ? `: ${letter.title}` : '') || 'Letter'} />
       <PdfPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} pdfPath={`/letters/${id}/export/pdf/`} title={`Preview: ${letter?.letter_type_display || 'Letter'}`} />
       <p className="meta">Updated {new Date(letter.updated_at).toLocaleDateString()}</p>
       <div className="card card--detail">

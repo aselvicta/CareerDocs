@@ -10,7 +10,7 @@
   {% if cvs %}
   <ul>
     {% for cv in cvs %}
-    <li><a href="{% url 'documents:cv_detail' cv.pk %}">{{ cv.title }}</a> — {{ cv.template }} (updated {{ cv.updated_at|date:"M d, Y" }})</li>
+    <li><a href="{% url 'documents:cv_detail' cv.pk %}">{{ cv.title }}</a> · {{ cv.template }} (updated {{ cv.updated_at|date:"M d, Y" }})</li>
     {% endfor %}
   </ul>
   {% else %}
@@ -24,7 +24,7 @@
   {% if letters %}
   <ul>
     {% for letter in letters %}
-    <li><a href="{% url 'documents:letter_detail' letter.pk %}">{{ letter.get_letter_type_display }}{% if letter.title %} — {{ letter.title }}{% endif %}</a> ({{ letter.updated_at|date:"M d, Y" }})</li>
+    <li><a href="{% url 'documents:letter_detail' letter.pk %}">{{ letter.get_letter_type_display }}{% if letter.title %}: {{ letter.title }}{% endif %}</a> ({{ letter.updated_at|date:"M d, Y" }})</li>
     {% endfor %}
   </ul>
   {% else %}

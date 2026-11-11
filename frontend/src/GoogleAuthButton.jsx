@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react'
 import { getApiBase } from './api'
 
 /**
- * "Continue with Google" — used for both sign in and sign up.
+ * "Continue with Google", used for both sign in and sign up.
  * The backend creates the account on first Google login, or signs in an existing one.
  */
 export function GoogleAuthButton({ disabled = false, label = 'Continue with Google' }) {

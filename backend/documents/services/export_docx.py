@@ -42,12 +42,12 @@ def build_cv_docx(cv) -> io.BytesIO:
     if cv.certifications:
         p = doc.add_paragraph()
         p.add_run('Certifications').bold = True
-        cert_lines = [(c.get('name') or '') + (f" – {c.get('issuer', '')}" if c.get('issuer') else '') for c in cv.certifications if c.get('name')]
+        cert_lines = [(c.get('name') or '') + (f", {c.get('issuer', '')}" if c.get('issuer') else '') for c in cv.certifications if c.get('name')]
         doc.add_paragraph('\n'.join(cert_lines))
     if cv.projects:
         p = doc.add_paragraph()
         p.add_run('Projects').bold = True
-        proj_lines = [(pr.get('name') or '') + (f" – {pr.get('description', '')}" if pr.get('description') else '') for pr in cv.projects if pr.get('name')]
+        proj_lines = [(pr.get('name') or '') + (f", {pr.get('description', '')}" if pr.get('description') else '') for pr in cv.projects if pr.get('name')]
         doc.add_paragraph('\n'.join(proj_lines))
     if cv.languages:
         p = doc.add_paragraph()
@@ -57,7 +57,7 @@ def build_cv_docx(cv) -> io.BytesIO:
     if cv.awards:
         p = doc.add_paragraph()
         p.add_run('Awards').bold = True
-        award_lines = [(a.get('name') or '') + (f" – {a.get('issuer', '')}" if a.get('issuer') else '') for a in cv.awards if a.get('name')]
+        award_lines = [(a.get('name') or '') + (f", {a.get('issuer', '')}" if a.get('issuer') else '') for a in cv.awards if a.get('name')]
         doc.add_paragraph('\n'.join(award_lines))
     if cv.references:
         p = doc.add_paragraph()

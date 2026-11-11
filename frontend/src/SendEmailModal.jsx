@@ -47,7 +47,7 @@ export function SendEmailModal({ open, onClose, type, id, title }) {
           : 'Please find my letter attached as a PDF.'
       let body = message.trim() ? `${message.trim()}\n\n${defaultBody}` : defaultBody
       body +=
-        '\n\n(A PDF was saved to your device — attach it here before sending if your email app did not add it automatically.)'
+        '\n\n(A PDF was saved to your device. Attach it here before sending if your email app did not add it automatically.)'
 
       window.location.href = buildMailto(to, subject, body)
       addToast('PDF saved. Your email app should open next.', 'success')

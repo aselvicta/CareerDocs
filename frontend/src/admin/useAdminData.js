@@ -3,7 +3,7 @@ import { api } from '../api'
 
 /**
  * Fetch an admin endpoint; refetches when `path` changes or reload() is called.
- * reload(true) refreshes quietly (no loading state) — used for live polling.
+ * reload(true) refreshes quietly (no loading state), used for live polling.
  */
 export function useAdminData(path) {
   const [req, setReq] = useState({ n: 0, quiet: false })

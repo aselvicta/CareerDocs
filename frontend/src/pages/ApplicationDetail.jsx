@@ -53,7 +53,7 @@ export function ApplicationDetail() {
         <div className="table-responsive">
           <table className="detail-table">
             <tbody>
-              <tr><td className="detail-table__label">Company</td><td>{app.company || '—'}</td></tr>
+              <tr><td className="detail-table__label">Company</td><td>{app.company || 'Not set'}</td></tr>
               <tr><td className="detail-table__label">Status</td><td><strong>{app.status_display}</strong></td></tr>
               {app.deadline && <tr><td className="detail-table__label">Deadline</td><td>{new Date(app.deadline).toLocaleDateString()}</td></tr>}
               {app.job_url && <tr><td className="detail-table__label">Link</td><td><a href={app.job_url} target="_blank" rel="noopener noreferrer" className="detail-table__break">{app.job_url}</a></td></tr>}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Lock, Mail, ShieldCheck, ArrowLeft, Sparkles } from 'lucide-react'
-import { AppLogo } from '../AppLogo'
+import { AppLogo, Wordmark } from '../AppLogo'
 import { useAuth } from '../AuthContext'
 import { useToast } from '../ToastContext'
 
@@ -34,7 +34,7 @@ export function AdminLogin() {
         <div className="admin-auth__brand">
           <AppLogo className="app-logo--nav" alt="" />
           <div>
-            <p className="admin-auth__title">Career Docs</p>
+            <p className="admin-auth__title"><Wordmark /></p>
             <p className="admin-auth__badge"><ShieldCheck size={13} aria-hidden /> Admin console</p>
           </div>
         </div>
@@ -56,7 +56,7 @@ export function AdminLogin() {
             {submitting ? <><Sparkles size={18} className="spin-slow" /> Signing in…</> : <><ShieldCheck size={18} /> Sign in</>}
           </button>
         </form>
-        <Link to="/login" className="admin-auth__back"><ArrowLeft size={14} /> Back to Career Docs</Link>
+        <Link to="/login" className="admin-auth__back"><ArrowLeft size={14} /> Back to CareerDocs</Link>
       </div>
     </div>
   )
