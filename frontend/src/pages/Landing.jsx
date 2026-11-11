@@ -9,33 +9,24 @@ import photo736 from '../assets/landing-students-736.webp'
 import photoJpg from '../assets/landing-students-736.jpg'
 import './landing.css'
 
-// Real product numbers (CV templates, letter types, AI endpoints, export formats in the backend).
-const STATS = [
-  { value: '4', label: 'CV templates' },
-  { value: '5', label: 'Letter types' },
-  { value: '8', label: 'AI writing tools' },
-  { value: '2', label: 'Export formats' },
-]
-
-const FEATURES = [
-  { title: 'AI writing assistant', text: 'Turn rough notes into strong, results-focused bullet points and summaries in seconds.' },
-  { title: 'Professional templates', text: 'Clean, recruiter-friendly CV designs you can switch between at any time.' },
-  { title: 'Cover & application letters', text: 'Generate tailored letters for jobs and internships, then fine-tune every line.' },
-  { title: 'ATS check & tailoring', text: 'Match your CV to a job description and fix the gaps applicant tracking systems look for.' },
-  { title: 'PDF & Word export', text: 'Download polished documents ready to upload, print or attach.' },
-  { title: 'Application tracker', text: 'Keep every job, deadline, status and the documents you sent in one place.' },
+// Same names and descriptions as the in-app template picker (pages/CVTemplates.jsx).
+const TEMPLATES = [
+  { id: 'classic', name: 'Classic', text: 'Timeless, clear structure. Ideal for traditional industries and senior roles.' },
+  { id: 'modern', name: 'Modern', text: 'Clean lines and subtle hierarchy. Perfect for tech and creative roles.' },
+  { id: 'minimal', name: 'Minimal', text: 'Maximum impact with minimal clutter. Best for design and UX portfolios.' },
+  { id: 'professional', name: 'Professional', text: 'Structured and formal. Suits finance, law and corporate positions.' },
 ]
 
 const STEPS = [
-  { title: 'Create your account', text: 'Sign up free with email or Google in under a minute.' },
-  { title: 'Build with a template', text: 'Pick a design, fill in your details and let AI polish the wording.' },
-  { title: 'Export, share & apply', text: 'Download as PDF or Word, share a link, or email it straight to employers.' },
+  { title: 'Pick a template', text: 'Start from a clean, recruiter-friendly layout. You can switch designs at any time without retyping.' },
+  { title: 'Fill it in, AI polishes it', text: 'Add your experience in plain words. The AI turns it into clear, results-focused bullet points.' },
+  { title: 'Download and apply', text: 'Export to PDF or Word, share a private link, or email it to an employer straight from CareerDocs.' },
 ]
 
 const FAQS = [
   { q: 'Is CareerDocs free to use?', a: 'Yes. You can create an account and build your CVs, letters and application tracker for free.' },
   { q: 'Can I download my CV as a Word document?', a: 'Yes. Every CV and letter can be exported as a PDF or as an editable Word (.docx) file.' },
-  { q: 'What can the AI do for me?', a: 'It rewrites bullet points and summaries, suggests alternative wording, drafts cover letters and emails, tailors your CV to a job description and runs an ATS keyword check.' },
+  { q: 'What does the AI actually do?', a: 'It rewrites bullet points and summaries, suggests alternative wording, drafts cover letters and emails, tailors your CV to a job description and runs an ATS keyword check. You stay in control of every change.' },
   { q: 'Who can see my documents?', a: 'Your documents are private to your account and are not visible to other users. A CV only becomes public if you create a share link, and you can turn that link off at any time.' },
   { q: 'Do I need a Google account?', a: 'No. Sign up with any email and password, or use Google for one-click sign in.' },
 ]
@@ -50,123 +41,183 @@ function useWarmBackend() {
   }, [])
 }
 
+/** The hero document: a realistic CV page, built in HTML so it stays crisp at any size. */
+function HeroCV() {
+  return (
+    <div className="lp-doc" aria-hidden>
+      <div className="lp-doc__head">
+        <p className="lp-doc__name">Sarah Kamau</p>
+        <p className="lp-doc__role">Junior Data Analyst</p>
+        <p className="lp-doc__contact">Nairobi · sarah.kamau@email.com · +254 700 000 000</p>
+      </div>
+      <p className="lp-doc__h">Profile</p>
+      <p className="lp-doc__p">
+        Analytical graduate with hands-on experience turning raw data into clear reports.
+        Comfortable with SQL, Excel and Power BI, and used to presenting findings to non-technical teams.
+      </p>
+      <p className="lp-doc__h">Experience</p>
+      <div className="lp-doc__job">
+        <p><strong>Data Analyst Intern</strong>, Northwind Logistics <span>Jun 2024 to Dec 2024</span></p>
+        <ul>
+          <li className="lp-doc__hl">Built a weekly delivery dashboard that cut reporting time from 6 hours to 1.</li>
+          <li>Cleaned and merged 3 years of shipment data across 4 regional systems.</li>
+          <li>Presented monthly performance insights to the operations leadership team.</li>
+        </ul>
+      </div>
+      <p className="lp-doc__h">Education</p>
+      <p className="lp-doc__p"><strong>BSc Statistics</strong>, University of Nairobi <span className="lp-doc__muted">2020 to 2024</span></p>
+      <p className="lp-doc__h">Skills</p>
+      <p className="lp-doc__skills">SQL · Excel · Power BI · Python · Data cleaning · Reporting</p>
+    </div>
+  )
+}
+
+/** Miniature CV in each template's style, for the template gallery. */
+function MiniCV({ variant }) {
+  const lines = n => Array.from({ length: n }, (_, i) => <span key={i} className="mini__line" style={{ width: `${92 - ((i * 17) % 30)}%` }} />)
+  return (
+    <div className={`mini mini--${variant}`} aria-hidden>
+      {variant === 'modern' ? (
+        <>
+          <div className="mini__side">
+            <span className="mini__name">Sarah Kamau</span>
+            <span className="mini__role">Data Analyst</span>
+            <span className="mini__h">Contact</span>{lines(3)}
+            <span className="mini__h">Skills</span>{lines(4)}
+          </div>
+          <div className="mini__main">
+            <span className="mini__h">Profile</span>{lines(3)}
+            <span className="mini__h">Experience</span>{lines(5)}
+            <span className="mini__h">Education</span>{lines(2)}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="mini__head">
+            <span className="mini__name">Sarah Kamau</span>
+            <span className="mini__role">Junior Data Analyst</span>
+          </div>
+          <div className="mini__body">
+            <span className="mini__h">Profile</span>{lines(3)}
+            <span className="mini__h">Experience</span>{lines(5)}
+            <span className="mini__h">Education</span>{lines(2)}
+            <span className="mini__h">Skills</span>{lines(2)}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function Landing() {
   useWarmBackend()
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className="landing">
-      <header className="landing-nav">
-        <div className="landing-wrap landing-nav__inner">
-          <Link to="/" className="landing-brand" aria-label="CareerDocs home">
-            <AppLogo className="landing-brand__mark" alt="" /> <Wordmark />
+    <div className="lp">
+      <header className="lp-nav">
+        <div className="lp-wrap lp-nav__inner">
+          <Link to="/" className="lp-brand" aria-label="CareerDocs home">
+            <AppLogo className="lp-brand__mark" alt="" /> <Wordmark />
           </Link>
-          <nav className="landing-nav__links" aria-label="Sections">
-            <a href="#features">Features</a>
+          <nav className="lp-nav__links" aria-label="Sections">
+            <a href="#templates">Templates</a>
             <a href="#how">How it works</a>
+            <a href="#features">Features</a>
             <a href="#faq">FAQ</a>
           </nav>
-          <div className="landing-nav__actions">
-            <button type="button" className="landing-icon-btn" onClick={toggleTheme}
+          <div className="lp-nav__actions">
+            <button type="button" className="lp-icon-btn" onClick={toggleTheme}
               aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
-              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
             </button>
-            <Link to="/login" className="landing-pill-btn landing-pill-btn--dark">Login</Link>
-            <Link to="/register" className="landing-pill-btn landing-pill-btn--outline">Register</Link>
+            <Link to="/login" className="lp-link">Log in</Link>
+            <Link to="/register" className="lp-btn lp-btn--primary">Build my CV</Link>
           </div>
         </div>
       </header>
 
       <main>
         {/* ---------- Hero ---------- */}
-        <section className="landing-hero">
-          <div className="landing-wrap landing-hero__grid">
-            <div className="landing-hero__copy">
-              <h1>
-                Land your next role with a CV that{' '}
-                <span className="landing-underline">
-                  gets noticed
-                  <svg viewBox="0 0 300 24" preserveAspectRatio="none" aria-hidden>
-                    <path d="M4 16 C 60 6, 140 4, 296 12" />
-                  </svg>
-                </span>
-              </h1>
-              <p className="landing-lead">
-                Build professional CVs and cover letters, polish them with AI, check them against job
-                descriptions and track every application, all in one place.
+        <section className="lp-hero">
+          <div className="lp-wrap lp-hero__grid">
+            <div className="lp-hero__copy">
+              <p className="lp-overline">CV and cover letter builder</p>
+              <h1>Build a CV that gets you <mark>the interview.</mark></h1>
+              <p className="lp-lead">
+                Choose a recruiter-friendly template, let AI sharpen your wording, check it against the
+                job description and download it as PDF or Word.
               </p>
-              <div className="landing-ctas">
-                <Link to="/register" className="landing-pill-btn landing-pill-btn--dark landing-pill-btn--lg">
-                  Get started free
+              <div className="lp-hero__ctas">
+                <Link to="/register" className="lp-btn lp-btn--primary lp-btn--lg">Build my CV</Link>
+                <Link to="/register" className="lp-btn lp-btn--ghost lp-btn--lg">Write a cover letter</Link>
+              </div>
+              <p className="lp-hero__note">Free to start. Already have an account? <Link to="/login">Log in</Link></p>
+            </div>
+
+            <div className="lp-hero__visual">
+              <div className="lp-sheet lp-sheet--back" aria-hidden>
+                <p className="lp-sheet__title">Cover letter</p>
+                {Array.from({ length: 9 }, (_, i) => <span key={i} className="mini__line" style={{ width: `${95 - ((i * 13) % 28)}%` }} />)}
+              </div>
+              <HeroCV />
+              <div className="lp-note lp-note--rewrite" aria-hidden>
+                <span className="lp-note__label">AI rewrite</span>
+                <span className="lp-note__before">Made reports for the delivery team.</span>
+              </div>
+              <div className="lp-note lp-note--ats" aria-hidden>
+                <span className="lp-note__label">ATS keyword match</span>
+                <span className="lp-note__score">14 <small>of 16</small></span>
+                <span className="lp-bar"><span style={{ width: '87%' }} /></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- Facts ---------- */}
+        <section className="lp-facts" aria-label="What you get">
+          <div className="lp-wrap lp-facts__row">
+            <p><strong>4</strong> professional CV templates</p>
+            <p><strong>5</strong> letter types</p>
+            <p><strong>8</strong> AI writing tools</p>
+            <p><strong>PDF</strong> and <strong>Word</strong> export</p>
+          </div>
+        </section>
+
+        {/* ---------- Templates ---------- */}
+        <section id="templates" className="lp-section">
+          <div className="lp-wrap">
+            <div className="lp-section__head">
+              <p className="lp-overline">Templates</p>
+              <h2>Layouts recruiters actually read</h2>
+              <p className="lp-sub">Every template is clean, single-purpose and easy for applicant tracking systems to parse. Switch between them at any time.</p>
+            </div>
+            <div className="lp-templates">
+              {TEMPLATES.map(t => (
+                <Link key={t.id} to="/register" className="lp-template">
+                  <div className="lp-template__frame"><MiniCV variant={t.id} /></div>
+                  <div className="lp-template__meta">
+                    <h3>{t.name}</h3>
+                    <p>{t.text}</p>
+                    <span className="lp-template__cta">Use this template</span>
+                  </div>
                 </Link>
-                <Link to="/login" className="landing-textlink">I already have an account</Link>
-              </div>
-            </div>
-
-            <div className="landing-hero__art">
-              <div className="landing-backdrop" aria-hidden />
-              <picture>
-                <source type="image/webp" srcSet={`${photo480} 480w, ${photo736} 736w`} sizes="(max-width: 900px) 84vw, 42vw" />
-                <img className="landing-photo" src={photoJpg} width="736" height="736"
-                  alt="Smiling students holding notebooks, celebrating together" fetchPriority="high" decoding="async" />
-              </picture>
-              <div className="landing-float landing-float--ats" aria-hidden>
-                <span>
-                  <strong>ATS match</strong>
-                  <span className="landing-meter"><span style={{ width: '92%' }} /></span>
-                </span>
-                <b>92%</b>
-              </div>
-              <div className="landing-float landing-float--status" aria-hidden>
-                <span><strong>Interview invite</strong><small>Graduate Analyst</small></span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ---------- Stats band ---------- */}
-        <section className="landing-stats" aria-label="CareerDocs at a glance">
-          <div className="landing-wrap landing-stats__row">
-            {STATS.map(s => (
-              <div key={s.label} className="landing-stat">
-                <span className="landing-stat__value">{s.value}</span>
-                <span className="landing-stat__label">{s.label}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ---------- Features ---------- */}
-        <section id="features" className="landing-section">
-          <div className="landing-wrap landing-features-layout">
-            <div className="landing-features-intro">
-              <p className="landing-eyebrow">Everything you need</p>
-              <h2>From first draft <span className="landing-nowrap">to job offer</span></h2>
-              <p className="landing-sub">Tools that take the stress out of writing and organising your applications.</p>
-              <Link to="/register" className="landing-pill-btn landing-pill-btn--dark">Start building</Link>
-            </div>
-            <div className="landing-features">
-              {FEATURES.map(f => (
-                <article key={f.title} className="landing-card">
-                  <h3>{f.title}</h3>
-                  <p>{f.text}</p>
-                </article>
               ))}
             </div>
           </div>
         </section>
 
         {/* ---------- How it works ---------- */}
-        <section id="how" className="landing-section landing-section--alt">
-          <div className="landing-wrap">
-            <div className="landing-section__head">
-              <p className="landing-eyebrow">How it works</p>
-              <h2>Three steps to a standout application</h2>
+        <section id="how" className="lp-section lp-section--tint">
+          <div className="lp-wrap">
+            <div className="lp-section__head lp-section__head--left">
+              <p className="lp-overline">How it works</p>
+              <h2>From blank page to finished CV in three steps</h2>
             </div>
-            <ol className="landing-steps">
+            <ol className="lp-steps">
               {STEPS.map((s, i) => (
-                <li key={s.title} className="landing-step">
-                  <span className="landing-step__num">{String(i + 1).padStart(2, '0')}</span>
+                <li key={s.title} className="lp-step">
+                  <span className="lp-step__num">{i + 1}</span>
                   <h3>{s.title}</h3>
                   <p>{s.text}</p>
                 </li>
@@ -175,18 +226,107 @@ export function Landing() {
           </div>
         </section>
 
-        {/* ---------- FAQ ---------- */}
-        <section id="faq" className="landing-section">
-          <div className="landing-wrap landing-faq-layout">
-            <div>
-              <p className="landing-eyebrow">FAQ</p>
-              <h2>Questions, answered</h2>
-              <p className="landing-sub">Everything you need to know before you start.</p>
+        {/* ---------- Features as real examples ---------- */}
+        <section id="features" className="lp-section">
+          <div className="lp-wrap lp-features">
+            <div className="lp-split">
+              <div className="lp-split__copy">
+                <p className="lp-overline">AI writing</p>
+                <h2>Say what you did, the way recruiters want to read it</h2>
+                <p className="lp-sub">Write your experience in plain words. CareerDocs rewrites it into specific, results-focused bullet points, and suggests alternatives until it sounds like you.</p>
+              </div>
+              <div className="lp-card lp-rewrite" aria-label="Example of an AI rewrite">
+                <div className="lp-rewrite__row">
+                  <span className="lp-tag">Before</span>
+                  <p className="lp-rewrite__before">Responsible for handling customer complaints.</p>
+                </div>
+                <div className="lp-rewrite__row">
+                  <span className="lp-tag lp-tag--blue">After</span>
+                  <p className="lp-rewrite__after">Resolved 40+ customer issues a week and reduced repeat complaints by 25% through clearer follow-up.</p>
+                </div>
+                <p className="lp-card__foot">Example output. You review and accept every change.</p>
+              </div>
             </div>
-            <div className="landing-faq">
+
+            <div className="lp-split lp-split--reverse">
+              <div className="lp-split__copy">
+                <p className="lp-overline">ATS check and tailoring</p>
+                <h2>Tailor your CV to every job description</h2>
+                <p className="lp-sub">Paste a job advert to see which keywords your CV already covers and which are missing, then tailor your CV and cover letter to match.</p>
+              </div>
+              <div className="lp-card lp-ats" aria-label="Example of an ATS keyword check">
+                <div className="lp-ats__top">
+                  <div>
+                    <p className="lp-card__eyebrow">Graduate Analyst</p>
+                    <p className="lp-ats__score">86<small>/100</small></p>
+                  </div>
+                  <span className="lp-bar lp-bar--wide"><span style={{ width: '86%' }} /></span>
+                </div>
+                <p className="lp-card__label">Found in your CV</p>
+                <div className="lp-chips">
+                  {['SQL', 'Excel', 'Power BI', 'Reporting', 'Data cleaning', 'Stakeholders'].map(k => <span key={k} className="lp-chip">{k}</span>)}
+                </div>
+                <p className="lp-card__label">Missing</p>
+                <div className="lp-chips">
+                  {['Python', 'Forecasting'].map(k => <span key={k} className="lp-chip lp-chip--missing">{k}</span>)}
+                </div>
+              </div>
+            </div>
+
+            <div className="lp-split">
+              <div className="lp-split__copy">
+                <p className="lp-overline">Letters and tracking</p>
+                <h2>Every application, organised in one place</h2>
+                <p className="lp-sub">Generate cover letters, internship and job application letters, then track each role with its deadline, status and the exact CV and letter you sent.</p>
+              </div>
+              <div className="lp-card lp-tracker" aria-label="Example of the application tracker">
+                <table>
+                  <thead><tr><th>Role</th><th>Deadline</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>Graduate Analyst</strong><span>Northwind Logistics</span></td><td>14 Mar</td><td><span className="lp-status lp-status--interview">Interview</span></td></tr>
+                    <tr><td><strong>Data Intern</strong><span>Lakeside Bank</span></td><td>2 Apr</td><td><span className="lp-status lp-status--applied">Applied</span></td></tr>
+                    <tr><td><strong>Research Assistant</strong><span>City Health Trust</span></td><td>20 Apr</td><td><span className="lp-status">Draft</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- Audience ---------- */}
+        <section className="lp-section lp-section--tint">
+          <div className="lp-wrap lp-audience">
+            <picture>
+              <source type="image/webp" srcSet={`${photo480} 480w, ${photo736} 736w`} sizes="(max-width: 900px) 92vw, 44vw" />
+              <img className="lp-audience__photo" src={photoJpg} width="736" height="736" loading="lazy" decoding="async"
+                alt="Smiling students holding notebooks, celebrating together" />
+            </picture>
+            <div>
+              <p className="lp-overline">Who it is for</p>
+              <h2>Made for students and graduates</h2>
+              <p className="lp-sub">Whether it is your first CV, an internship application or your first graduate role, CareerDocs helps you present what you have done with confidence.</p>
+              <dl className="lp-audience__list">
+                <div><dt>First CV</dt><dd>Templates and prompts that make a short work history look focused, not thin.</dd></div>
+                <div><dt>Internships and attachments</dt><dd>Ready-made letter types for internship and job applications.</dd></div>
+                <div><dt>Graduate job hunt</dt><dd>Tailor each application and keep track of every deadline.</dd></div>
+              </dl>
+              <Link to="/register" className="lp-btn lp-btn--primary">Create my free account</Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- FAQ ---------- */}
+        <section id="faq" className="lp-section">
+          <div className="lp-wrap lp-faq-layout">
+            <div>
+              <p className="lp-overline">FAQ</p>
+              <h2>Questions, answered</h2>
+              <p className="lp-sub">Can&apos;t find what you need? Sign up and ask the built-in help assistant.</p>
+            </div>
+            <div className="lp-faq">
               {FAQS.map(f => (
-                <details key={f.q} className="landing-faq__item">
-                  <summary>{f.q}<ChevronDown size={18} className="landing-faq__chev" aria-hidden /></summary>
+                <details key={f.q} className="lp-faq__item">
+                  <summary>{f.q}<ChevronDown size={18} className="lp-faq__chev" aria-hidden /></summary>
                   <p>{f.a}</p>
                 </details>
               ))}
@@ -194,43 +334,35 @@ export function Landing() {
           </div>
         </section>
 
-        {/* ---------- Call to action ---------- */}
-        <section className="landing-section landing-section--tight">
-          <div className="landing-wrap">
-            <div className="landing-cta">
-              <div>
-                <h2>Ready to build your CV?</h2>
-                <p>Create professional documents in minutes and keep every application on track.</p>
-              </div>
-              <Link to="/register" className="landing-pill-btn landing-pill-btn--light landing-pill-btn--lg">
-                Create free account
-              </Link>
-            </div>
+        {/* ---------- Closing CTA ---------- */}
+        <section className="lp-closing">
+          <div className="lp-wrap lp-closing__inner">
+            <h2>Your next application deserves a better CV.</h2>
+            <Link to="/register" className="lp-btn lp-btn--light lp-btn--lg">Build my CV</Link>
           </div>
         </section>
       </main>
 
-      <footer className="landing-footer">
-        <div className="landing-wrap">
-          <div className="landing-footer__grid">
-            <div className="landing-footer__about">
-              <span className="landing-brand landing-brand--footer"><AppLogo className="landing-brand__mark" alt="" /> <Wordmark /></span>
-              <p>Build CVs and professional letters with AI. Export to PDF or Word and track every application.</p>
-            </div>
-            <div>
-              <h4>Product</h4>
-              <a href="#features">Features</a>
-              <a href="#how">How it works</a>
-              <a href="#faq">FAQ</a>
-            </div>
-            <div>
-              <h4>Account</h4>
-              <Link to="/login">Login</Link>
-              <Link to="/register">Create account</Link>
-            </div>
+      <footer className="lp-footer">
+        <div className="lp-wrap lp-footer__grid">
+          <div>
+            <span className="lp-brand"><AppLogo className="lp-brand__mark" alt="" /> <Wordmark /></span>
+            <p className="lp-footer__about">CV and cover letter builder with AI writing, ATS checks and application tracking.</p>
           </div>
-          <p className="landing-footer__copy">© {new Date().getFullYear()} CareerDocs. All rights reserved.</p>
+          <nav aria-label="Product">
+            <h4>Product</h4>
+            <a href="#templates">Templates</a>
+            <a href="#how">How it works</a>
+            <a href="#features">Features</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <nav aria-label="Account">
+            <h4>Account</h4>
+            <Link to="/login">Log in</Link>
+            <Link to="/register">Create account</Link>
+          </nav>
         </div>
+        <div className="lp-wrap lp-footer__copy">© {new Date().getFullYear()} CareerDocs. All rights reserved.</div>
       </footer>
     </div>
   )
