@@ -4,10 +4,14 @@ A running log of product and engineering decisions, newest first. Add to it as w
 
 ## 2026-11-11: App shell polish and new landing hero
 
-- **Landing hero** now shows a two column CV (slate photo sidebar, Contact and Skills, Work history)
-  on a coral block with a dot grid, plus the ATS keyword match card. Built in HTML (`HeroCV` in
-  `Landing.jsx`) so text stays crisp; only the headshot is an image (`assets/hero-photo.webp`).
-  The cover letter sheet and the "AI rewrite" note were removed from the hero.
+- **Landing hero** shows our own two column CV: "Brian Otieno", Customer Success Lead in Nairobi,
+  fictional employers (Pesaflow Payments, Savanna Home Stores, Kilele Telecom), navy sidebar with
+  amber accents on an amber block, plus the ATS keyword match card. The headshot is cropped from our
+  own `landing-students-736.jpg` (no third party photos or sample content). Built in HTML (`HeroCV`
+  in `Landing.jsx`) so text stays crisp.
+- Beside it, a brand mark pattern (dots, plus signs, amber squares; `HeroPattern`) and the layers
+  move a few pixels with the cursor (`useHeroParallax` sets `--mx`/`--my`). Off on touch devices
+  and for reduced motion.
 - **Collapsible sidebar**: the app sidebar folds to a 68px icon rail (button next to the logo, or
   Ctrl/Cmd+\\). It folds automatically in the CV and letter editors so the split screen gets the
   room, unless the user has made an explicit choice (stored in `localStorage['sh-rail']`). The

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Sun, Moon, ChevronDown, MapPin, Phone, Send } from 'lucide-react'
 import { AppLogo, Wordmark } from '../AppLogo'
@@ -47,69 +47,116 @@ function HeroCV() {
   return (
     <div className="lp-doc" aria-hidden>
       <aside className="lp-doc__side">
-        <img className="lp-doc__photo" src={heroPhoto} alt="" width="276" height="306" />
+        <img className="lp-doc__photo" src={heroPhoto} alt="" width="300" height="334" />
         <p className="lp-doc__sh">Contact</p>
         <ul className="lp-doc__contact">
-          <li><MapPin size="1em" /> London, England, W1T 1JY</li>
-          <li><Phone size="1em" /> 020 7946 0377</li>
-          <li><Send size="1em" /> jsmith@email.com</li>
+          <li><MapPin size="1em" /> Westlands, Nairobi</li>
+          <li><Phone size="1em" /> +254 712 000 000</li>
+          <li><Send size="1em" /> brian.otieno@email.com</li>
         </ul>
         <p className="lp-doc__sh">Skills</p>
         <ul className="lp-doc__skills">
-          <li>Consultative sales</li>
-          <li>Retail operating standards</li>
-          <li>Product demonstration</li>
-          <li>Visual merchandising</li>
-          <li>POS systems</li>
-          <li>Retail inventory management</li>
-          <li>Customer service training</li>
+          <li>Account management</li>
+          <li>CRM (HubSpot, Zoho)</li>
+          <li>Customer onboarding</li>
+          <li>Sales reporting in Excel</li>
+          <li>Conflict resolution</li>
+          <li>Team training</li>
+        </ul>
+        <p className="lp-doc__sh">Languages</p>
+        <ul className="lp-doc__skills">
+          <li>English, fluent</li>
+          <li>Kiswahili, native</li>
         </ul>
       </aside>
       <div className="lp-doc__main">
-        <p className="lp-doc__name">Jessica Smith</p>
-        <p className="lp-doc__h">Professional summary</p>
+        <p className="lp-doc__name">Brian Otieno</p>
+        <p className="lp-doc__title">Customer Success Lead</p>
+        <p className="lp-doc__h">Profile</p>
         <p className="lp-doc__p">
-          Driven Sales Associate focused on excellent sales results through impeccable customer service.
-          Training staff to an equally high standard to optimise customer experience and maximise profits.
+          Customer success professional with five years in fast growing retail and fintech teams. Known for
+          turning unhappy accounts into long term clients and for training new staff to do the same.
         </p>
-        <p className="lp-doc__h">Work history</p>
+        <p className="lp-doc__h">Experience</p>
         <div className="lp-doc__job">
-          <p className="lp-doc__role"><strong>Sales Associate</strong><span>02/2017 to Current</span></p>
-          <p className="lp-doc__org">Nike, London, UK</p>
+          <p className="lp-doc__role"><strong>Customer Success Lead</strong><span>2023 to Present</span></p>
+          <p className="lp-doc__org">Pesaflow Payments, Nairobi</p>
           <ul>
-            <li>Implemented a customer service training programme, improving guest satisfaction scores by 40% within 6 months.</li>
-            <li>Developed a new shop floor layout, reducing waiting times by 10 minutes per customer.</li>
+            <li className="lp-doc__hl">Cut monthly churn from 6% to 3.5% by introducing 30 day onboarding check-ins.</li>
+            <li>Lead a team of 6 handling 180 merchant accounts across East Africa.</li>
           </ul>
         </div>
         <div className="lp-doc__job">
-          <p className="lp-doc__role"><strong>Junior Sales Advisor</strong><span>03/2015 to 01/2017</span></p>
-          <p className="lp-doc__org">Walmart, London, UK</p>
+          <p className="lp-doc__role"><strong>Account Executive</strong><span>2021 to 2023</span></p>
+          <p className="lp-doc__org">Savanna Home Stores, Nairobi</p>
           <ul>
-            <li>Exceeded sales targets for swimwear collection by 40% through store product placement and visual merchandising.</li>
-            <li>Increased client retention rate from 70% to 90% within 8 months.</li>
+            <li>Grew corporate orders by 45% in two years through repeat business programmes.</li>
+            <li>Built the weekly sales report used by regional managers.</li>
           </ul>
         </div>
         <div className="lp-doc__job">
-          <p className="lp-doc__role"><strong>Sales Assistant</strong><span>07/2012 to 03/2015</span></p>
-          <p className="lp-doc__org">Decathlon, London, UK</p>
+          <p className="lp-doc__role"><strong>Customer Service Associate</strong><span>2019 to 2021</span></p>
+          <p className="lp-doc__org">Kilele Telecom, Kisumu</p>
           <ul>
-            <li>Operated store POS system to process daily cash and card transactions with 100% accuracy.</li>
+            <li>Resolved 60+ customer queries a day with a 94% satisfaction score.</li>
           </ul>
         </div>
         <p className="lp-doc__h">Education</p>
-        <p className="lp-doc__p"><strong>Diploma in Sales and Marketing</strong>, 2006</p>
-        <p className="lp-doc__p lp-doc__muted">Metropolitan Community College, Leeds</p>
-        <p className="lp-doc__h">Certifications</p>
-        <p className="lp-doc__p">Retail Associate Certificate, 2009</p>
+        <p className="lp-doc__p"><strong>BCom, Marketing</strong>, 2019</p>
+        <p className="lp-doc__p lp-doc__muted">Maseno University, Kisumu</p>
       </div>
     </div>
   )
+}
+
+/** Moves the hero layers a few pixels with the cursor (desktop only, off for reduced motion). */
+function useHeroParallax() {
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !window.matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches) return undefined
+    const zone = el.closest('.lp-hero') || el
+    let frame = 0
+    const onMove = e => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect()
+        const x = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (window.innerWidth / 2)))
+        const y = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (window.innerHeight / 2)))
+        el.style.setProperty('--mx', x.toFixed(3))
+        el.style.setProperty('--my', y.toFixed(3))
+      })
+    }
+    const onLeave = () => { el.style.setProperty('--mx', 0); el.style.setProperty('--my', 0) }
+    zone.addEventListener('pointermove', onMove)
+    zone.addEventListener('pointerleave', onLeave)
+    return () => {
+      cancelAnimationFrame(frame)
+      zone.removeEventListener('pointermove', onMove)
+      zone.removeEventListener('pointerleave', onLeave)
+    }
+  }, [])
+  return ref
+}
+
+/** Brand pattern beside the CV: small marks in the CareerDocs colours. */
+function HeroPattern() {
+  const marks = []
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 3; c++) {
+      const i = r * 3 + c
+      const kind = i % 7 === 3 ? 'sq' : i % 5 === 1 ? 'plus' : 'dot'
+      marks.push(<span key={i} className={`lp-pat__m lp-pat__m--${kind}`} style={{ '--d': (r + c) % 4 }} />)
+    }
+  }
+  return <div className="lp-pat" aria-hidden>{marks}</div>
 }
 
 /** Miniature CV in each template's style, for the template gallery. */
 export function Landing() {
   useWarmBackend()
   const { theme, toggleTheme } = useTheme()
+  const heroRef = useHeroParallax()
 
   return (
     <div className="lp">
@@ -153,9 +200,9 @@ export function Landing() {
               <p className="lp-hero__note">Free to start. Already have an account? <Link to="/login">Log in</Link></p>
             </div>
 
-            <div className="lp-hero__visual">
+            <div className="lp-hero__visual" ref={heroRef}>
               <span className="lp-hero__block" aria-hidden />
-              <span className="lp-hero__dots" aria-hidden />
+              <HeroPattern />
               <HeroCV />
               <div className="lp-note lp-note--ats" aria-hidden>
                 <span className="lp-note__label">ATS keyword match</span>
