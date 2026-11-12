@@ -40,3 +40,12 @@ export const GMAIL_ERRORS = {
 /** Gmail web link to a sent conversation (opens in the right account when signed into several). */
 export const gmailThreadUrl = (email, threadId) =>
   `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}#all/${threadId}`
+
+/** Gmail's web compose window, prefilled. Attachments cannot be passed in a URL. */
+export function gmailComposeUrl({ to, subject, body }) {
+  const q = new URLSearchParams({ view: 'cm', fs: '1', to: to || '', su: subject || '' })
+  // Very long URLs fail in Gmail; keep the body to a safe size.
+  const safeBody = (body || '').length > 6000 ? `${body.slice(0, 6000)}...` : (body || '')
+  q.set('body', safeBody)
+  return `https://mail.google.com/mail/?${q.toString()}`
+}

@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Mail, Send, Paperclip, FileText, Sparkles, Wand2, X } from 'lucide-react'
+import { CheckCircle2, ExternalLink, Mail, Send, Paperclip, FileText, Sparkles, Wand2, X } from 'lucide-react'
 import { useShell } from '../shell/shellContext'
-import { api } from '../api'
+import { api, downloadExport } from '../api'
 import { useToast } from '../ToastContext'
 import { useEmailDraft } from '../EmailDraftContext'
-import { useSenders, rememberFrom, lastFrom } from '../shell/useSenders'
+import { useSenders, rememberFrom, lastFrom, gmailComposeUrl } from '../shell/useSenders'
 
 const asList = d => (Array.isArray(d) ? d : d?.results || [])
 
@@ -28,6 +28,8 @@ export function EmailComposer() {
   const [apps, setApps] = useState([])
   const [appId, setAppId] = useState('')
   const [params, setParams] = useSearchParams()
+  const [handoff, setHandoff] = useState(null) // { to, subject, appId, jobTitle } after Open in Gmail
+  const [marking, setMarking] = useState(false)
 
   useEffect(() => {
     Promise.all([api.get('/cvs/?limit=50'), api.get('/letters/?limit=50'), api.get('/applications/?limit=100')]).then(([cvsData, lettersData, appsData]) => {
@@ -153,6 +155,47 @@ export function EmailComposer() {
     }
   }
 
+  // Open Gmail's compose window with what was typed, and download the PDFs to attach there.
+  async function openInGmail() {
+    const to = toEmail.trim()
+    if (to && !to.includes('@')) { addToast('Check the recipient email.', 'error'); return }
+    // Open synchronously inside the click so pop-up blockers allow it.
+    // No 'noopener' feature here: with it, window.open always returns null and we could not detect a blocked pop-up.
+    const win = window.open(gmailComposeUrl({ to, subject: subject.trim(), body }), '_blank')
+    if (win) win.opener = null
+    else addToast('Allow pop-ups for CareerDocs so Gmail can open in a new tab.', 'error')
+    const job = apps.find(a => String(a.id) === appId)
+    setHandoff({ to, subject: subject.trim(), appId, jobTitle: job?.job_title })
+    if (!selectedDocs.length && !files.length) return
+    try {
+      for (const d of selectedDocs) {
+        const path = d.type === 'cv' ? `/cvs/${d.id}/export/pdf/` : `/letters/${d.id}/export/pdf/`
+        const stem = (d.title || (d.type === 'cv' ? 'CV' : 'Letter')).replace(/\s+/g, '_')
+        const needsCv = d.type === 'cv' && !/(^|_)CV$/i.test(stem)
+        await downloadExport(path, `${stem}${needsCv ? '_CV' : ''}.pdf`)
+      }
+      const n = selectedDocs.length
+      addToast(n ? `${n} PDF${n === 1 ? '' : 's'} downloaded. Attach ${n === 1 ? 'it' : 'them'} in Gmail with the paperclip.` : 'Attach your files in Gmail with the paperclip.', 'success')
+    } catch (e) {
+      addToast(e?.message || 'Could not download the PDFs.', 'error')
+    }
+  }
+
+  async function markSent() {
+    if (!handoff?.appId) return
+    if (!handoff.to) { addToast('Enter the recipient in To first, so we can save it on the job.', 'error'); return }
+    setMarking(true)
+    try {
+      const app = await api.post(`/applications/${handoff.appId}/mark-sent/`, { to_email: handoff.to, subject: handoff.subject })
+      addToast(`Saved on ${app.job_title}${app.status === 'applied' ? ' and moved to Applied' : ''}.`, 'success')
+      setHandoff(null)
+      setToEmail(''); setSubject(''); setBody(''); setSelectedDocs([]); setFiles([]); setAppId('')
+    } catch (e) {
+      addToast(e?.message || 'Could not save.', 'error')
+    } finally { setMarking(false) }
+  }
+
+  const showFrom = senders.available || senders.accounts.length > 0
   const attachCount = selectedDocs.length + files.length
 
   return (
@@ -160,7 +203,7 @@ export function EmailComposer() {
       <div className="pg-head">
         <div>
           <h1 className="pg-title">Email</h1>
-          <p className="pg-sub">Send your CV and cover letter to an employer from your own Gmail, attached as PDFs.</p>
+          <p className="pg-sub">Write your application here, then open it in Gmail to send from your own address, or send it from CareerDocs with the PDFs attached.</p>
         </div>
         <div className="pg-actions">
           <button type="button" className="btn btn-secondary" onClick={openEmailWriter}><Wand2 size={16} /> Write it with AI</button>
@@ -168,7 +211,7 @@ export function EmailComposer() {
       </div>
       <div className="em-grid">
         <section className="em-compose">
-          <label className="em-line">
+          {showFrom && <label className="em-line">
             <span>From</span>
             <select className="em-select" value={effectiveFrom} onChange={e => setFromId(e.target.value)}>
               {senders.accounts.map(a => (
@@ -184,7 +227,7 @@ export function EmailComposer() {
               </button>
             )}
             {senders.accounts.length > 0 && <Link to="/profile#email" className="em-ai">Manage</Link>}
-          </label>
+          </label>}
           <label className="em-line">
             <span>To</span>
             <input type="email" value={toEmail} onChange={e => setToEmail(e.target.value)} placeholder="recruiter@company.com" />
@@ -210,10 +253,32 @@ export function EmailComposer() {
               <Sparkles size={14} /> {aiField === 'body' ? 'Improving...' : 'Improve body with AI'}
             </button>
             <span className="em-foot__count">{attachCount ? `${attachCount} attachment${attachCount === 1 ? '' : 's'}` : 'No attachments'}</span>
-            <button type="button" className="btn btn-primary" onClick={handleSend} disabled={sending}>
-              <Send size={16} /> {sending ? 'Sending...' : 'Send'}
-            </button>
+            {showFrom ? (
+              <button type="button" className="btn btn-primary" onClick={handleSend} disabled={sending}>
+                <Send size={16} /> {sending ? 'Sending...' : 'Send'}
+              </button>
+            ) : (
+              <>
+                <button type="button" className="btn btn-secondary" onClick={handleSend} disabled={sending} title="Sent from the CareerDocs address with PDFs attached. Replies come to your email.">
+                  <Send size={16} /> {sending ? 'Sending...' : 'Send from CareerDocs'}
+                </button>
+                <button type="button" className="btn btn-primary" onClick={openInGmail}>
+                  <ExternalLink size={16} /> Open in Gmail
+                </button>
+              </>
+            )}
           </div>
+          {handoff && (
+            <div className="em-handoff" role="status">
+              <CheckCircle2 size={18} />
+              <p>
+                <strong>Finish in Gmail.</strong> Attach the downloaded PDFs, then press Send there.
+                {handoff.appId ? ` Once it's sent, save it on ${handoff.jobTitle || 'the job'}.` : ''}
+              </p>
+              {handoff.appId && <button type="button" className="btn btn-primary btn--sm" onClick={markSent} disabled={marking}>{marking ? 'Saving...' : 'Mark as sent'}</button>}
+              <button type="button" className="em-handoff__x" onClick={() => setHandoff(null)} aria-label="Dismiss"><X size={16} /></button>
+            </div>
+          )}
         </section>
 
         <aside className="em-side">

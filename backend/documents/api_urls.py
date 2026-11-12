@@ -43,6 +43,7 @@ urlpatterns = [
     path('ai/ats/', api_views.api_ai_ats),
     path('applications/', api_views.api_applications),
     path('applications/<int:pk>/', api_views.api_application_detail),
+    path('applications/<int:pk>/mark-sent/', api_views.api_application_mark_sent),
     path('compose-email/', api_views.api_compose_email),
     path('gmail/accounts/', api_views.api_gmail_accounts),
     path('gmail/accounts/<int:pk>/', api_views.api_gmail_account_detail),

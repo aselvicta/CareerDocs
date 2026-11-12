@@ -83,7 +83,7 @@ export function ApplicationDetail() {
               <dl className="ad-dl">
                 <dt>Subject</dt><dd>{app.email_subject || '(no subject)'}</dd>
                 <dt>To</dt><dd>{app.email_sent_to}</dd>
-                <dt>From</dt><dd>{app.email_sent_from || 'CareerDocs'}</dd>
+                <dt>From</dt><dd>{app.email_sent_from || (app.email_sent_via === 'gmail_compose' ? 'Your Gmail' : 'CareerDocs')}</dd>
                 <dt>Sent</dt><dd>{shortDate(app.email_sent_at)} ({relativeTime(app.email_sent_at)})</dd>
               </dl>
               {app.gmail_thread_id && app.email_sent_from && (
@@ -93,7 +93,7 @@ export function ApplicationDetail() {
               )}
             </>
           ) : (
-            <p className="home-card__empty">Send your CV and cover letter for this job from your Gmail. The email is saved here and the job moves to Applied.</p>
+            <p className="home-card__empty">Email your CV and cover letter for this job. Once it is sent, it is saved here and the job moves to Applied.</p>
           )}
         </section>
         <section className="home-card">

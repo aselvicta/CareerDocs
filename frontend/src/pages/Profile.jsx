@@ -93,7 +93,7 @@ export function Profile() {
       </div>
       <div className="st-grid">
         <nav className="st-nav" aria-label="Settings sections">
-          {SECTIONS.map(s => <a key={s.id} href={`#${s.id}`}>{s.label}</a>)}
+          {SECTIONS.filter(s => s.id !== 'email' || senders.available || senders.accounts.length > 0).map(s => <a key={s.id} href={`#${s.id}`}>{s.label}</a>)}
         </nav>
 
         <form className="st-main" onSubmit={save}>
@@ -134,7 +134,7 @@ export function Profile() {
             </div>
           </section>
 
-          <section id="email" className="st-card">
+          {(senders.available || senders.accounts.length > 0) && <section id="email" className="st-card">
             <header>
               <h2>Email sending</h2>
               <p>Connect Gmail to send applications from your own address. They appear in your Gmail Sent folder and recruiters reply straight to your inbox.</p>
@@ -165,7 +165,7 @@ export function Profile() {
               CareerDocs only asks for permission to send. It cannot read your inbox. Without Gmail, emails go from CareerDocs
               with replies directed to {senders.replyTo || 'your email'}.
             </p>
-          </section>
+          </section>}
 
           <section id="appearance" className="st-card">
             <header><h2>Appearance</h2><p>Choose how CareerDocs looks on this device. Your documents always print in their own colours.</p></header>

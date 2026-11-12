@@ -17,6 +17,7 @@ SETTINGS = dict(
     FRONTEND_URL='http://frontend.test',
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     DEFAULT_FROM_EMAIL='CareerDocs <noreply@careerdocs.test>',
+    GMAIL_SEND_ENABLED=True,
 )
 
 
@@ -131,3 +132,22 @@ class GmailTests(TestCase):
         self.assertEqual(r.status_code, 204)
         self.assertEqual(req.post.call_args.kwargs['data'], {'token': 'refresh-1'})
         self.assertFalse(GmailAccount.objects.exists())
+
+    @override_settings(GMAIL_SEND_ENABLED=False)
+    def test_connect_is_off_by_default(self):
+        self.assertFalse(self.client.get('/api/gmail/accounts/', **self.auth).json()['available'])
+        self.assertEqual(self.client.post('/api/gmail/connect/', **self.auth).status_code, 400)
+
+    def test_mark_sent_after_open_in_gmail(self):
+        job = Application.objects.create(user=self.user, job_title='Data Analyst', status='draft')
+        r = self.client.post(f'/api/applications/{job.id}/mark-sent/',
+                             {'to_email': 'hr@acme.test', 'subject': 'Application'}, **self.auth)
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual((r.json()['email_sent_via'], r.json()['status'], r.json()['email_sent_to']),
+                         ('gmail_compose', 'applied', 'hr@acme.test'))
+
+    def test_mark_sent_rejects_other_users_job(self):
+        other = User.objects.create_user(username='y', email='y@example.com', password='pw-12345678')
+        job = Application.objects.create(user=other, job_title='X')
+        r = self.client.post(f'/api/applications/{job.id}/mark-sent/', {'to_email': 'hr@acme.test'}, **self.auth)
+        self.assertEqual(r.status_code, 404)

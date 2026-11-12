@@ -59,8 +59,9 @@ def _client():
 
 
 def is_configured():
+    """True when Connect Gmail is switched on (GMAIL_SEND_ENABLED) and Google credentials exist."""
     cid, secret = _client()
-    return bool(cid and secret)
+    return bool(getattr(settings, 'GMAIL_SEND_ENABLED', False) and cid and secret)
 
 
 def _fernet():
@@ -100,7 +101,7 @@ def is_connect_state(state):
 
 def build_connect_url(user):
     cid, _ = _client()
-    if not cid:
+    if not cid or not is_configured():
         raise GmailError('Gmail sending is not set up on this server yet.', 'not_configured')
     state = STATE_PREFIX + signing.dumps({'u': user.pk, 'n': secrets.token_urlsafe(8)}, salt=STATE_SALT)
     params = {
@@ -132,7 +133,7 @@ def connect_callback(request):
         return _back_to_settings('invalid_state')
 
     cid, secret = _client()
-    if not cid or not secret:
+    if not is_configured():
         return _back_to_settings('not_configured')
     try:
         resp = requests.post(GOOGLE_TOKEN_URL, data={

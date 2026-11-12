@@ -2,7 +2,27 @@
 
 A running log of product and engineering decisions, newest first. Add to it as we build.
 
-## 2026-11-12: Send from your own Gmail (Phase 1)
+## 2026-11-12: "Open in Gmail" while Connect Gmail waits for Google verification
+
+- Connecting Gmail needs Google to verify the `gmail.send` scope (domain, privacy policy, demo
+  video), and in Testing mode refresh tokens expire after 7 days. Until there is a domain, the
+  feature is **off**: `GMAIL_SEND_ENABLED=false` (default). With it off, `/api/gmail/accounts/`
+  reports `available: false`, connect is refused, and the From picker and Settings > Email sending
+  are hidden. Turn it on with `GMAIL_SEND_ENABLED=true` on Render once Google approves the app.
+- The composer's main action is now **Open in Gmail**: a new tab with Gmail's compose window
+  (`mail.google.com/mail/?view=cm&fs=1&to=&su=&body=`), with To, Subject and Body filled in. URLs
+  cannot carry attachments, so the selected CV and letter PDFs download at the same time and a note
+  says to attach them with the paperclip. Body is capped at 6000 characters to keep the URL safe.
+- When the email is for a job, **Mark as sent** (`POST /api/applications/<id>/mark-sent/`) records
+  it on the application and moves Saved to Applied. It is a button, not automatic, because we cannot
+  see whether the user pressed Send in Gmail.
+- `Application.email_sent_via`: `careerdocs` (our SMTP), `gmail_api` (connected Gmail) or
+  `gmail_compose` (Open in Gmail). The application page shows "Your Gmail" for the last one.
+- **Send from CareerDocs** stays as the secondary button (PDFs attached, Reply-To the user).
+- Gotcha: `window.open(url, '_blank', 'noopener')` always returns null, so a blocked pop-up cannot be
+  detected. Open without the feature, then set `win.opener = null`.
+
+## 2026-11-12: Send from your own Gmail (Phase 1, behind GMAIL_SEND_ENABLED)
 
 ### What shipped
 - **Settings > Email sending**: connect one or more Gmail addresses (up to 5), see last used,

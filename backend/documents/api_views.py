@@ -793,20 +793,42 @@ def _deliver(request, msg, application=None):
     result = {'ok': True, 'message': 'Email sent.', 'via': via, 'sent_from': sent_from,
               'gmail_thread_id': gmail_ids.get('threadId', '')}
     if application is not None:
-        application.email_sent_at = timezone.now()
-        application.email_sent_from = sent_from
-        application.email_sent_to = (msg.to or [''])[0][:254]
-        application.email_subject = (msg.subject or '')[:300]
-        application.gmail_message_id = gmail_ids.get('id', '')
-        application.gmail_thread_id = gmail_ids.get('threadId', '')
-        fields = ['email_sent_at', 'email_sent_from', 'email_sent_to', 'email_subject',
-                  'gmail_message_id', 'gmail_thread_id', 'updated_at']
-        if application.status == 'draft':
-            application.status = 'applied'
-            fields.append('status')
-        application.save(update_fields=fields)
+        _record_sent(application, 'gmail_api' if via == 'gmail' else 'careerdocs', (msg.to or [''])[0],
+                     msg.subject, sent_from, gmail_ids.get('id', ''), gmail_ids.get('threadId', ''))
         result['application'] = ApplicationSerializer(application).data
     return result
+
+
+def _record_sent(application, via, to_email, subject, sent_from='', message_id='', thread_id=''):
+    """Remember the email on the job and move a Saved job to Applied."""
+    application.email_sent_at = timezone.now()
+    application.email_sent_via = via
+    application.email_sent_from = sent_from
+    application.email_sent_to = (to_email or '')[:254]
+    application.email_subject = (subject or '')[:300]
+    application.gmail_message_id = message_id
+    application.gmail_thread_id = thread_id
+    fields = ['email_sent_at', 'email_sent_via', 'email_sent_from', 'email_sent_to', 'email_subject',
+              'gmail_message_id', 'gmail_thread_id', 'updated_at']
+    if application.status == 'draft':
+        application.status = 'applied'
+        fields.append('status')
+    application.save(update_fields=fields)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_application_mark_sent(request, pk):
+    """The user sent the email themselves (Open in Gmail). Record it like a CareerDocs send."""
+    app = Application.objects.filter(user=request.user, pk=pk).first()
+    if not app:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    try:
+        to_email = _valid_recipient(request.data.get('to_email'))
+    except _SendError as exc:
+        return _send_error_response(exc)
+    _record_sent(app, 'gmail_compose', to_email, (request.data.get('subject') or '').strip())
+    return Response(ApplicationSerializer(app).data)
 
 
 def _valid_recipient(value):

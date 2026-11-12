@@ -81,6 +81,8 @@ class Application(models.Model):
     notes = models.TextField(blank=True)
     # Last email sent for this job from CareerDocs. Gmail ids let us find the conversation later.
     email_sent_at = models.DateTimeField(null=True, blank=True)
+    # careerdocs = our SMTP, gmail_api = connected Gmail, gmail_compose = user sent it in Gmail themselves
+    email_sent_via = models.CharField(max_length=20, blank=True, default='')
     email_sent_from = models.EmailField(blank=True, default='')
     email_sent_to = models.EmailField(blank=True, default='')
     email_subject = models.CharField(max_length=300, blank=True, default='')
