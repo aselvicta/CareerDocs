@@ -79,6 +79,13 @@ class Application(models.Model):
     cv = models.ForeignKey(CV, on_delete=models.SET_NULL, null=True, blank=True, related_name='applications')
     letter = models.ForeignKey('Letter', on_delete=models.SET_NULL, null=True, blank=True, related_name='applications')
     notes = models.TextField(blank=True)
+    # Last email sent for this job from CareerDocs. Gmail ids let us find the conversation later.
+    email_sent_at = models.DateTimeField(null=True, blank=True)
+    email_sent_from = models.EmailField(blank=True, default='')
+    email_sent_to = models.EmailField(blank=True, default='')
+    email_subject = models.CharField(max_length=300, blank=True, default='')
+    gmail_message_id = models.CharField(max_length=64, blank=True, default='')
+    gmail_thread_id = models.CharField(max_length=64, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -133,3 +140,20 @@ class LetterRevision(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Letter Revision'
         verbose_name_plural = 'Letter Revisions'
+
+
+class GmailAccount(models.Model):
+    """A Gmail address the user connected so emails go out from their own mailbox (gmail.send scope only)."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gmail_accounts')
+    email = models.EmailField()
+    refresh_token = models.TextField(help_text='Encrypted with Fernet (see documents/gmail.py). Never returned by the API.')
+    needs_reconnect = models.BooleanField(default=False)
+    connected_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['connected_at']
+        constraints = [models.UniqueConstraint(fields=['user', 'email'], name='uniq_gmail_per_user')]
+
+    def __str__(self):
+        return f'{self.email} ({self.user_id})'

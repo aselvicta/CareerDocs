@@ -44,6 +44,9 @@ urlpatterns = [
     path('applications/', api_views.api_applications),
     path('applications/<int:pk>/', api_views.api_application_detail),
     path('compose-email/', api_views.api_compose_email),
+    path('gmail/accounts/', api_views.api_gmail_accounts),
+    path('gmail/accounts/<int:pk>/', api_views.api_gmail_account_detail),
+    path('gmail/connect/', api_views.api_gmail_connect),
     path('home/', api_views.api_home),
     path('search/', api_views.api_search),
     # Analytics: page-view tracking + staff-only admin dashboard

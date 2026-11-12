@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Mail, Send, Paperclip, FileText, Sparkles, Wand2, X } from 'lucide-react'
 import { useShell } from '../shell/shellContext'
 import { api } from '../api'
 import { useToast } from '../ToastContext'
 import { useEmailDraft } from '../EmailDraftContext'
+import { useSenders, rememberFrom, lastFrom } from '../shell/useSenders'
+
+const asList = d => (Array.isArray(d) ? d : d?.results || [])
 
 export function EmailComposer() {
   const { draft, clearDraft } = useEmailDraft()
@@ -19,13 +23,54 @@ export function EmailComposer() {
   const fileInputRef = useRef(null)
   const { addToast } = useToast()
   const { openEmailWriter } = useShell()
+  const senders = useSenders()
+  const [fromId, setFromId] = useState(lastFrom)
+  const [apps, setApps] = useState([])
+  const [appId, setAppId] = useState('')
+  const [params, setParams] = useSearchParams()
 
   useEffect(() => {
-    Promise.all([api.get('/cvs/?limit=50'), api.get('/letters/?limit=50')]).then(([cvsData, lettersData]) => {
-      setCvs(Array.isArray(cvsData) ? cvsData : [])
-      setLetters(Array.isArray(lettersData) ? lettersData : [])
+    Promise.all([api.get('/cvs/?limit=50'), api.get('/letters/?limit=50'), api.get('/applications/?limit=100')]).then(([cvsData, lettersData, appsData]) => {
+      const cvList = asList(cvsData)
+      const letterList = asList(lettersData)
+      const appList = asList(appsData)
+      setCvs(cvList)
+      setLetters(letterList)
+      setApps(appList)
+      // Deep links: /compose?application=ID, ?cv=ID, ?letter=ID
+      const pre = []
+      const cvId = Number(params.get('cv'))
+      const letterId = Number(params.get('letter'))
+      const cv = cvList.find(c => c.id === cvId)
+      const letter = letterList.find(l => l.id === letterId)
+      if (cv) pre.push({ type: 'cv', id: cv.id, title: cv.title })
+      if (letter) pre.push({ type: 'letter', id: letter.id, title: letter.title || letter.letter_type_display })
+      if (pre.length) setSelectedDocs(pre)
+      const app = appList.find(a => a.id === Number(params.get('application')))
+      if (app) pickApplication(app, cvList, letterList)
+      if (params.toString()) setParams({}, { replace: true })
     }).catch(() => {})
   }, [])
+
+  // Fall back to a valid sender once accounts load (the remembered one may have been disconnected).
+  const usable = senders.accounts.filter(a => !a.needs_reconnect)
+  const fromValid = fromId === 'default' || usable.some(a => String(a.id) === fromId)
+  const effectiveFrom = fromValid ? fromId : (usable[0] ? String(usable[0].id) : 'default')
+
+  function pickApplication(app, cvList = cvs, letterList = letters) {
+    setAppId(app ? String(app.id) : '')
+    if (!app) return
+    setSubject(s => s.trim() ? s : `Application for ${app.job_title}${app.company ? ` at ${app.company}` : ''}`)
+    setSelectedDocs(prev => {
+      const next = [...prev]
+      const add = (type, id, title) => { if (id && !next.some(d => d.type === type && d.id === id)) next.push({ type, id, title }) }
+      const cv = cvList.find(c => c.id === app.cv)
+      const letter = letterList.find(l => l.id === app.letter)
+      if (cv) add('cv', cv.id, cv.title)
+      if (letter) add('letter', letter.id, letter.title || letter.letter_type_display)
+      return next
+    })
+  }
   useEffect(() => {
     if (draft.subject || draft.body) {
       setSubject(draft.subject)
@@ -86,16 +131,23 @@ export function EmailComposer() {
     form.append('body', body.trim() || 'Please see the attached documents.')
     form.append('attachments', JSON.stringify(selectedDocs.map(d => ({ type: d.type, id: d.id }))))
     files.forEach((f, i) => form.append('files', f, f.name || `file_${i}`))
+    if (effectiveFrom !== 'default') form.append('from_account', effectiveFrom)
+    if (appId) form.append('application', appId)
     try {
-      await api.postMultipart('/compose-email/', form)
-      addToast('Email sent.', 'success')
+      const res = await api.postMultipart('/compose-email/', form)
+      rememberFrom(effectiveFrom)
+      const where = res.via === 'gmail' ? `Sent from ${res.sent_from}. It is in your Gmail Sent folder.` : 'Email sent.'
+      addToast(res.application ? `${where} Saved to ${res.application.job_title}.` : where, 'success')
       setToEmail('')
       setSubject('')
       setBody('')
       setSelectedDocs([])
       setFiles([])
+      setAppId('')
+      if (res.via === 'gmail') senders.reload()
     } catch (e) {
       addToast(e?.message || 'Failed to send.', 'error')
+      if (e?.data?.reconnect) senders.reload()
     } finally {
       setSending(false)
     }
@@ -108,7 +160,7 @@ export function EmailComposer() {
       <div className="pg-head">
         <div>
           <h1 className="pg-title">Email</h1>
-          <p className="pg-sub">Send your CV and cover letter straight to an employer, attached as PDFs.</p>
+          <p className="pg-sub">Send your CV and cover letter to an employer from your own Gmail, attached as PDFs.</p>
         </div>
         <div className="pg-actions">
           <button type="button" className="btn btn-secondary" onClick={openEmailWriter}><Wand2 size={16} /> Write it with AI</button>
@@ -117,8 +169,32 @@ export function EmailComposer() {
       <div className="em-grid">
         <section className="em-compose">
           <label className="em-line">
+            <span>From</span>
+            <select className="em-select" value={effectiveFrom} onChange={e => setFromId(e.target.value)}>
+              {senders.accounts.map(a => (
+                <option key={a.id} value={String(a.id)} disabled={a.needs_reconnect}>
+                  {a.email}{a.needs_reconnect ? ' (reconnect in Settings)' : ''}
+                </option>
+              ))}
+              <option value="default">CareerDocs{senders.replyTo ? ` (replies go to ${senders.replyTo})` : ''}</option>
+            </select>
+            {!senders.loading && senders.available && !senders.accounts.length && (
+              <button type="button" className="em-ai em-connect" onClick={() => senders.connect().catch(e => addToast(e?.message || 'Could not start Gmail connection.', 'error'))}>
+                <Mail size={14} /> Connect Gmail
+              </button>
+            )}
+            {senders.accounts.length > 0 && <Link to="/profile#email" className="em-ai">Manage</Link>}
+          </label>
+          <label className="em-line">
             <span>To</span>
             <input type="email" value={toEmail} onChange={e => setToEmail(e.target.value)} placeholder="recruiter@company.com" />
+          </label>
+          <label className="em-line">
+            <span>For job</span>
+            <select className="em-select" value={appId} onChange={e => pickApplication(apps.find(a => String(a.id) === e.target.value) || null)}>
+              <option value="">Not linked to a job</option>
+              {apps.map(a => <option key={a.id} value={String(a.id)}>{a.job_title}{a.company ? `, ${a.company}` : ''}</option>)}
+            </select>
           </label>
           <label className="em-line">
             <span>Subject</span>

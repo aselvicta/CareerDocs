@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CalendarClock, ExternalLink, FileText, Mail, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, CalendarClock, ExternalLink, FileText, Mail, Pencil, Plus, Send, Trash2 } from 'lucide-react'
 import { api } from '../api'
 import { useToast } from '../ToastContext'
 import { ConfirmDialog } from '../shell/Modal'
 import { STATUS_LABEL, relativeTime, shortDate } from '../shell/format'
+import { gmailThreadUrl } from '../shell/useSenders'
 
 const STAGES = ['draft', 'applied', 'interview', 'offer']
 
@@ -56,6 +57,7 @@ export function ApplicationDetail() {
         <div className="pg-actions">
           {app.job_url && <a href={app.job_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary"><ExternalLink size={16} /> Advert</a>}
           <Link to={`/applications/${id}/edit`} className="btn btn-secondary"><Pencil size={16} /> Edit</Link>
+          <Link to={`/compose?application=${id}`} className="btn btn-primary"><Send size={16} /> {app.email_sent_at ? 'Email again' : 'Email application'}</Link>
           <button type="button" className="btn btn-ghost" onClick={() => setConfirm(true)} aria-label="Delete"><Trash2 size={16} /></button>
         </div>
       </div>
@@ -73,10 +75,32 @@ export function ApplicationDetail() {
       </section>
 
       <div className="ad-grid">
+        <div className="ad-main">
+        <section className="home-card">
+          <div className="home-card__head"><h2>Sent email</h2></div>
+          {app.email_sent_at ? (
+            <>
+              <dl className="ad-dl">
+                <dt>Subject</dt><dd>{app.email_subject || '(no subject)'}</dd>
+                <dt>To</dt><dd>{app.email_sent_to}</dd>
+                <dt>From</dt><dd>{app.email_sent_from || 'CareerDocs'}</dd>
+                <dt>Sent</dt><dd>{shortDate(app.email_sent_at)} ({relativeTime(app.email_sent_at)})</dd>
+              </dl>
+              {app.gmail_thread_id && app.email_sent_from && (
+                <a className="btn btn-secondary btn--sm ad-gmail" href={gmailThreadUrl(app.email_sent_from, app.gmail_thread_id)} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink size={14} /> Open conversation in Gmail
+                </a>
+              )}
+            </>
+          ) : (
+            <p className="home-card__empty">Send your CV and cover letter for this job from your Gmail. The email is saved here and the job moves to Applied.</p>
+          )}
+        </section>
         <section className="home-card">
           <div className="home-card__head"><h2>Notes</h2><Link to={`/applications/${id}/edit`}>Edit</Link></div>
           {app.notes ? <p className="whitespace ad-notes">{app.notes}</p> : <p className="home-card__empty">Add the recruiter's name, interview times or anything you want to remember.</p>}
         </section>
+        </div>
         <div className="ad-side">
           <section className="home-card">
             <div className="home-card__head"><h2>Details</h2></div>

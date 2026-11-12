@@ -79,6 +79,8 @@ ADMIN_EMAILS = {
 # https://your-service.onrender.com/api/auth/google/callback
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '').strip()
 GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '').strip()
+# Optional Fernet key for Gmail refresh tokens. Unset: derived from SECRET_KEY (rotating it means users reconnect Gmail).
+GMAIL_TOKEN_KEY = os.environ.get('GMAIL_TOKEN_KEY', '').strip()
 GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
     'GOOGLE_OAUTH_REDIRECT_URI',
     f"{FRONTEND_URL.rstrip('/')}/api/auth/google/callback",

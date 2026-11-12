@@ -2,6 +2,53 @@
 
 A running log of product and engineering decisions, newest first. Add to it as we build.
 
+## 2026-11-12: Send from your own Gmail (Phase 1)
+
+### What shipped
+- **Settings > Email sending**: connect one or more Gmail addresses (up to 5), see last used,
+  reconnect when Google revokes access, disconnect (also revokes the token at Google).
+- **Composer**: a *From* picker (connected Gmail addresses, or CareerDocs) and a *For job* picker.
+  Choosing a job fills the subject ("Application for X at Y") and attaches that job's CV and letter.
+  Deep links: `/compose?application=ID`, `?cv=ID`, `?letter=ID`. The last used sender is remembered.
+- **Application page**: "Email application" button, and a *Sent email* card (subject, to, from,
+  date) with "Open conversation in Gmail". Sending moves a Saved job to Applied.
+- CV and letter pages' "Send by email" now open the composer with the PDF attached. The old
+  download-then-mailto modal (`SendEmailModal.jsx`) is gone.
+- Without Gmail, emails still go from the CareerDocs address, now with **Reply-To set to the user**
+  (profile email, else account email) so replies reach them.
+
+### How it works
+- `documents/gmail.py`. Scope is `gmail.send` only (Google "sensitive", not "restricted"):
+  CareerDocs can send but cannot read mail.
+- Connect reuses the sign-in redirect URI. `POST /api/gmail/connect/` returns a consent URL whose
+  `state` is `gm.` + a signed payload (user id, 15 minute expiry). `google_oauth_callback` hands
+  `gm.` states to `gmail.connect_callback`, so there is no second redirect URI to register.
+- `access_type=offline` + `prompt=consent` so Google always returns a refresh token. Only the
+  refresh token is stored, Fernet-encrypted (`GmailAccount.refresh_token`). Key: `GMAIL_TOKEN_KEY`
+  env, else derived from `SECRET_KEY` (rotating SECRET_KEY then means users reconnect).
+- Each send swaps the refresh token for an access token and posts the raw RFC 822 message to
+  `upload/gmail/v1/users/me/messages/send` (attachments up to Gmail's 25 MB). The message and
+  thread ids are saved on the `Application` (`gmail_thread_id` is what Phase 2 needs).
+- `invalid_grant` (revoked, password change, 6 months unused) marks the account `needs_reconnect`;
+  the API answers 409 with `reconnect: true`.
+- API: `GET /api/gmail/accounts/`, `POST /api/gmail/connect/`, `DELETE /api/gmail/accounts/<id>/`.
+  `compose-email/`, `cvs/<id>/send-email/` and `letters/<id>/send-email/` accept `from_account`
+  and `application`. Tests: `documents/test_gmail.py`.
+
+### Google Cloud setup (needed before it works in production)
+1. APIs and services > Library: enable **Gmail API** in the project that owns the sign-in client.
+2. OAuth consent screen > Data access: add scope `https://www.googleapis.com/auth/gmail.send`.
+3. While the app is in **Testing**, only listed test users (max 100) can connect Gmail. To open it
+   to everyone, submit for verification (sensitive scope: privacy policy, demo video, a few weeks;
+   no paid security assessment for send only).
+4. Optional: set `GMAIL_TOKEN_KEY` on Render (generate with
+   `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`).
+
+### Phase 2 (not built)
+Show replies on the application with a stop-tracking switch. Needs `gmail.readonly`, a Google
+"restricted" scope: verification plus a yearly third-party security assessment for public use,
+or test mode for up to 100 users.
+
 ## 2026-11-11: App shell polish and new landing hero
 
 - **Landing hero** shows our own two column CV: "Brian Otieno", Customer Success Lead in Nairobi,

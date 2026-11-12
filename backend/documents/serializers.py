@@ -97,9 +97,11 @@ class ApplicationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'job_title', 'company', 'job_url', 'deadline', 'status', 'status_display',
             'cv', 'cv_title', 'letter', 'letter_title', 'notes',
+            'email_sent_at', 'email_sent_from', 'email_sent_to', 'email_subject', 'gmail_thread_id',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'email_sent_at', 'email_sent_from', 'email_sent_to',
+                            'email_subject', 'gmail_thread_id']
 
 
 class LetterSerializer(DesignMixin, serializers.ModelSerializer):

@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
-import { LogOut, Monitor, Moon, Plus, Sun, Trash2 } from 'lucide-react'
+import { AlertTriangle, LogOut, Mail, Monitor, Moon, Plus, Sun, Trash2 } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
 import { useTheme } from '../ThemeContext'
 import { useToast } from '../ToastContext'
+import { useSenders, GMAIL_ERRORS } from '../shell/useSenders'
+import { relativeTime } from '../shell/format'
 
 const EMPTY_REF = { name: '', title: '', company: '', email: '', phone: '' }
 const SECTIONS = [
   { id: 'details', label: 'Personal details' },
   { id: 'summary', label: 'Default profile' },
   { id: 'references', label: 'References' },
+  { id: 'email', label: 'Email sending' },
   { id: 'appearance', label: 'Appearance' },
   { id: 'account', label: 'Account' },
 ]
@@ -21,6 +24,34 @@ export function Profile() {
   const [form, setForm] = useState(null)
   const [saved, setSaved] = useState(null)
   const [saving, setSaving] = useState(false)
+  const senders = useSenders()
+  const [connecting, setConnecting] = useState(false)
+  const [removing, setRemoving] = useState(null)
+
+  // Result of the Gmail connect redirect: /profile?gmail=connected#email or ?gmail_error=code#email
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    if (q.get('gmail') === 'connected') addToast('Gmail connected. Pick it in From when you send an email.', 'success')
+    const err = q.get('gmail_error')
+    if (err) addToast(GMAIL_ERRORS[err] || 'Gmail could not be connected. Please try again.', 'error')
+    if (q.has('gmail') || err) window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+  }, [addToast])
+
+  // The page renders a skeleton first, so jump to #section once the form exists.
+  const loaded = !!form
+  useEffect(() => {
+    if (!loaded || !window.location.hash) return
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: 'start' })
+  }, [loaded])
+
+  async function connectGmail() {
+    setConnecting(true)
+    try { await senders.connect() } catch (e) { addToast(e?.message || 'Could not start Gmail connection.', 'error'); setConnecting(false) }
+  }
+  async function disconnectGmail(acct) {
+    setRemoving(acct.id)
+    try { await senders.disconnect(acct.id); addToast(`${acct.email} disconnected.`, 'success') } catch (e) { addToast(e?.message || 'Could not disconnect.', 'error') } finally { setRemoving(null) }
+  }
 
   useEffect(() => {
     api.get('/profile/').then(d => {
@@ -101,6 +132,39 @@ export function Profile() {
               ))}
               <button type="button" className="ed-add" onClick={() => update('references', [...form.references, { ...EMPTY_REF }])}><Plus size={16} /> Add a referee</button>
             </div>
+          </section>
+
+          <section id="email" className="st-card">
+            <header>
+              <h2>Email sending</h2>
+              <p>Connect Gmail to send applications from your own address. They appear in your Gmail Sent folder and recruiters reply straight to your inbox.</p>
+            </header>
+            {senders.accounts.length > 0 && (
+              <ul className="st-senders">
+                {senders.accounts.map(a => (
+                  <li key={a.id} className="st-sender">
+                    <span className="st-sender__icon">{a.needs_reconnect ? <AlertTriangle size={17} /> : <Mail size={17} />}</span>
+                    <span className="st-sender__text">
+                      <strong>{a.email}</strong>
+                      {a.needs_reconnect
+                        ? <small className="is-warn">Google stopped access. Reconnect to keep sending.</small>
+                        : <small>{a.last_used_at ? `Last used ${relativeTime(a.last_used_at)}` : `Connected ${relativeTime(a.connected_at)}`}</small>}
+                    </span>
+                    {a.needs_reconnect && <button type="button" className="btn btn-secondary btn--sm" onClick={connectGmail} disabled={connecting}>Reconnect</button>}
+                    <button type="button" className="btn btn-ghost btn--sm" onClick={() => disconnectGmail(a)} disabled={removing === a.id}>{removing === a.id ? 'Removing...' : 'Disconnect'}</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {senders.available ? (
+              <button type="button" className={`btn ${senders.accounts.length ? 'btn-secondary' : 'btn-primary'}`} onClick={connectGmail} disabled={connecting}>
+                <Mail size={16} /> {connecting ? 'Opening Google...' : senders.accounts.length ? 'Connect another Gmail' : 'Connect Gmail'}
+              </button>
+            ) : !senders.loading && <p className="home-card__empty">Gmail sending is not set up on this server yet.</p>}
+            <p className="st-note">
+              CareerDocs only asks for permission to send. It cannot read your inbox. Without Gmail, emails go from CareerDocs
+              with replies directed to {senders.replyTo || 'your email'}.
+            </p>
           </section>
 
           <section id="appearance" className="st-card">

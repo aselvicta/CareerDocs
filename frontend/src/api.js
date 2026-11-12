@@ -46,7 +46,10 @@ async function handleResponse(r) {
         'API not found (404). Set VITE_API_BASE_URL on Vercel to your Django host and redeploy.',
       )
     }
-    throw new Error(data?.error || data?.detail || `Request failed ${r.status}`)
+    const err = new Error(data?.error || data?.detail || `Request failed ${r.status}`)
+    err.status = r.status
+    err.data = data
+    throw err
   }
   return data
 }

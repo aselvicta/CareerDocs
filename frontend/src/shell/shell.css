@@ -420,6 +420,19 @@ kbd, .sh-search kbd {
 .em-line input { flex: 1; min-width: 0; border: none; outline: none; background: none; color: var(--text); font: inherit; font-size: 0.95rem; padding: 0.85rem 0; }
 .em-ai { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; border: none; background: none; color: var(--text-muted); font: inherit; font-size: 0.82rem; cursor: pointer; padding: 0.3rem 0.5rem; border-radius: 6px; }
 .em-ai:hover { background: var(--surface-hover); color: var(--text); }
+a.em-ai { text-decoration: none; }
+.em-connect { color: var(--accent); font-weight: 600; }
+.em-select { flex: 1; min-width: 0; border: none; outline: none; background: none; color: var(--text); font: inherit; font-size: 0.95rem; padding: 0.85rem 0; cursor: pointer; text-overflow: ellipsis; }
+.em-select option { color: initial; }
+/* Settings: connected senders */
+.st-senders { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.st-sender { display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 0.9rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.st-sender__icon { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 8px; background: var(--accent-muted); color: var(--accent); }
+.st-sender__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.st-sender__text strong { font-size: 0.93rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.st-sender__text small { font-size: 0.8rem; color: var(--text-muted); }
+.st-sender__text small.is-warn { color: var(--danger); }
+.st-note { margin: 0.9rem 0 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.55; }
 .em-body { display: block; width: 100%; border: none; outline: none; resize: vertical; background: none; color: var(--text); font: inherit; font-size: 0.95rem; line-height: 1.6; padding: 1rem 1.1rem; min-height: 320px; }
 .em-foot { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.1rem; border-top: 1px solid var(--border); background: var(--bg); }
 .em-foot__count { margin-left: auto; font-size: 0.84rem; color: var(--text-muted); }
@@ -461,3 +474,7 @@ kbd, .sh-search kbd {
   .st-savebar span { flex: 1; }
 }
 @media (max-width: 760px) { .st-grid { grid-template-columns: 1fr; } .st-nav { display: none; } }
+
+/* Application detail: sent email */
+.ad-main { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.ad-gmail { margin-top: 0.9rem; text-decoration: none; }

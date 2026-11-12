@@ -62,6 +62,10 @@ def google_oauth_start(request):
 
 @require_GET
 def google_oauth_callback(request):
+    # "Connect Gmail" shares this redirect URI; its signed state starts with "gm.".
+    from . import gmail
+    if gmail.is_connect_state(request.GET.get('state')):
+        return gmail.connect_callback(request)
     next_url = _frontend_callback_path()
     err = request.GET.get('error')
     if err:

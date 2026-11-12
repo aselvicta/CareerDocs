@@ -20,7 +20,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from accounts.models import User, Profile
-from .models import CV, Letter, CVRevision, LetterRevision, Application
+from .models import CV, Letter, CVRevision, LetterRevision, Application, GmailAccount
 from .serializers import (
     CVSerializer, LetterSerializer, ApplicationSerializer, CVListSerializer, LetterListSerializer,
 )
@@ -717,46 +717,136 @@ def api_application_detail(request, pk):
 
 
 # ---------- Send by email ----------
-def _send_document_email(to_email, subject, body_text, pdf_buffer, filename):
-    from django.core.mail import EmailMessage
+# Every send goes through _deliver: from the user's connected Gmail when they pick one, otherwise from
+# the CareerDocs address with Reply-To set to the user so replies still reach them.
+
+class _SendError(Exception):
+    def __init__(self, message, http_status=400, code='invalid', reconnect=False):
+        super().__init__(message)
+        self.http_status = http_status
+        self.code = code
+        self.reconnect = reconnect
+
+
+def _send_error_response(exc):
+    return Response({'error': str(exc), 'code': exc.code, 'reconnect': exc.reconnect}, status=exc.http_status)
+
+
+def _sender_name(user):
+    profile = Profile.objects.filter(user=user).only('full_name').first()
+    return (profile.full_name if profile and profile.full_name else user.get_full_name() or '').strip()
+
+
+def _reply_to_address(user):
+    profile = Profile.objects.filter(user=user).only('email').first()
+    return (profile.email if profile and profile.email else user.email or '').strip()
+
+
+def _resolve_application(request):
+    app_id = request.data.get('application')
+    if app_id in (None, '', 'null'):
+        return None
+    try:
+        app_id = int(app_id)
+    except (TypeError, ValueError):
+        raise _SendError('Unknown application.')
+    app = Application.objects.filter(user=request.user, pk=app_id).first()
+    if not app:
+        raise _SendError('Unknown application.')
+    return app
+
+
+def _deliver(request, msg, application=None):
+    """Send msg (EmailMessage without from_email). Returns a dict for the API response."""
+    from email.utils import formataddr
     from django.conf import settings
-    msg = EmailMessage(
-        subject=subject,
-        body=body_text,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[to_email],
-    )
+    from . import gmail
+
+    acct_id = request.data.get('from_account')
+    gmail_ids = {'id': '', 'threadId': ''}
+    if acct_id not in (None, '', 'default', 'null'):
+        acct = GmailAccount.objects.filter(user=request.user, pk=acct_id).first() if str(acct_id).isdigit() else None
+        if not acct:
+            raise _SendError('That sending address is no longer connected. Pick another in From.')
+        if acct.needs_reconnect:
+            raise _SendError(f'Reconnect {acct.email} in Settings to send from it.', 409, 'reconnect', True)
+        name = _sender_name(request.user)
+        msg.from_email = formataddr((name, acct.email)) if name else acct.email
+        try:
+            gmail_ids = gmail.send_message(acct, msg)
+        except gmail.GmailError as exc:
+            raise _SendError(str(exc), 409 if exc.reconnect else 502, exc.code, exc.reconnect) from exc
+        sent_from = acct.email
+        via = 'gmail'
+    else:
+        msg.from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or 'noreply@careerdocs.local'
+        reply_to = _reply_to_address(request.user)
+        if reply_to:
+            msg.reply_to = [reply_to]
+        try:
+            msg.send()
+        except Exception as exc:
+            raise _SendError('The email could not be sent. Please try again in a moment.', 502, 'send_failed') from exc
+        sent_from = ''
+        via = 'careerdocs'
+
+    result = {'ok': True, 'message': 'Email sent.', 'via': via, 'sent_from': sent_from,
+              'gmail_thread_id': gmail_ids.get('threadId', '')}
+    if application is not None:
+        application.email_sent_at = timezone.now()
+        application.email_sent_from = sent_from
+        application.email_sent_to = (msg.to or [''])[0][:254]
+        application.email_subject = (msg.subject or '')[:300]
+        application.gmail_message_id = gmail_ids.get('id', '')
+        application.gmail_thread_id = gmail_ids.get('threadId', '')
+        fields = ['email_sent_at', 'email_sent_from', 'email_sent_to', 'email_subject',
+                  'gmail_message_id', 'gmail_thread_id', 'updated_at']
+        if application.status == 'draft':
+            application.status = 'applied'
+            fields.append('status')
+        application.save(update_fields=fields)
+        result['application'] = ApplicationSerializer(application).data
+    return result
+
+
+def _valid_recipient(value):
+    from django.core.validators import validate_email
+    value = (value or '').strip()
+    try:
+        validate_email(value)
+    except DjangoValidationError:
+        raise _SendError('Enter a valid recipient email.')
+    return value
+
+
+def _single_doc_send(request, filename, pdf_buffer, default_subject, default_message):
+    from django.core.mail import EmailMessage
+    to_email = _valid_recipient(request.data.get('to_email'))
+    application = _resolve_application(request)
+    subject = (request.data.get('subject') or '').strip() or default_subject
+    message = (request.data.get('message') or '').strip() or default_message
+    msg = EmailMessage(subject=subject[:300], body=message, to=[to_email])
     msg.attach(filename, pdf_buffer.getvalue(), 'application/pdf')
-    msg.send()
+    return _deliver(request, msg, application)
 
 
 def _compose_and_send(request):
-    """Build email with optional doc attachments (CV/letter PDFs) and uploaded files. Used by compose endpoint."""
+    """Build email with optional doc attachments (CV/letter PDFs) and uploaded files."""
     from django.core.mail import EmailMessage
-    from django.conf import settings
     import json as _json
 
-    to_email = (request.data.get('to_email') or request.POST.get('to_email') or '').strip()
-    if not to_email or '@' not in to_email:
-        return 'Valid to_email required'
-    subject = (request.data.get('subject') or request.POST.get('subject') or 'Message from Career Docs').strip() or 'Message from Career Docs'
-    body = (request.data.get('body') or request.POST.get('body') or '').strip() or 'Please see the attached documents.'
+    to_email = _valid_recipient(request.data.get('to_email'))
+    application = _resolve_application(request)
+    subject = (request.data.get('subject') or '').strip() or 'Message from CareerDocs'
+    body = (request.data.get('body') or '').strip() or 'Please see the attached documents.'
+    msg = EmailMessage(subject=subject[:300], body=body, to=[to_email])
 
-    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or 'noreply@careerdocs.local'
-    msg = EmailMessage(
-        subject=subject,
-        body=body,
-        from_email=from_email,
-        to=[to_email],
-    )
-
-    # Attach selected docs (CVs / letters as PDFs)
-    attachments_json = request.data.get('attachments') or request.POST.get('attachments') or '[]'
+    attachments_json = request.data.get('attachments') or '[]'
     try:
         attachments = _json.loads(attachments_json) if isinstance(attachments_json, str) else attachments_json
-    except Exception:
+    except ValueError:
         attachments = []
-    for item in attachments:
+    for item in attachments if isinstance(attachments, list) else []:
         typ = (item.get('type') or item.get('doc_type') or '').lower()
         doc_id = item.get('id')
         if not doc_id:
@@ -774,18 +864,12 @@ def _compose_and_send(request):
                 name = f"{letter.get_letter_type_display().replace(' ', '_')}_{letter.pk}.pdf"
                 msg.attach(name, buf.getvalue(), 'application/pdf')
 
-    # Attach uploaded files (DRF puts them in request.data; Django uses request.FILES)
-    files = list(request.FILES.getlist('files') or request.FILES.getlist('file') or [])
-    if not files and hasattr(request, 'data') and request.data:
-        files = list(request.data.getlist('files') or request.data.getlist('file') or [])
-    for f in files:
+    for f in request.FILES.getlist('files') or request.FILES.getlist('file') or []:
         name = getattr(f, 'name', None) or 'attachment'
-        content = f.read() if hasattr(f, 'read') else f
         ctype = getattr(f, 'content_type', None) or 'application/octet-stream'
-        msg.attach(name, content, ctype)
+        msg.attach(name, f.read(), ctype)
 
-    msg.send()
-    return None
+    return _deliver(request, msg, application)
 
 
 @api_view(['POST'])
@@ -794,23 +878,12 @@ def api_cv_send_email(request, pk):
     cv = CV.objects.filter(user=request.user, pk=pk).first()
     if not cv:
         return Response(status=status.HTTP_404_NOT_FOUND)
-    to_email = (request.data.get('to_email') or '').strip()
-    if not to_email or '@' not in to_email:
-        return Response({'error': 'Valid to_email required'}, status=400)
-    message = (request.data.get('message') or '').strip() or 'Please find your CV attached.'
     try:
-        buffer = build_cv_pdf(cv)
-        filename = f"{cv.title.replace(' ', '_')}_CV.pdf"
-        _send_document_email(
-            to_email,
-            subject=f"Your CV: {cv.title}",
-            body_text=message,
-            pdf_buffer=buffer,
-            filename=filename,
-        )
-        return Response({'ok': True, 'message': 'Email sent.'})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        return Response(_single_doc_send(
+            request, f"{cv.title.replace(' ', '_')}_CV.pdf", build_cv_pdf(cv),
+            f'CV: {cv.full_name or cv.title}', 'Please find my CV attached.'))
+    except _SendError as exc:
+        return _send_error_response(exc)
 
 
 @api_view(['POST'])
@@ -819,39 +892,66 @@ def api_letter_send_email(request, pk):
     letter = Letter.objects.filter(user=request.user, pk=pk).first()
     if not letter:
         return Response(status=status.HTTP_404_NOT_FOUND)
-    to_email = (request.data.get('to_email') or '').strip()
-    if not to_email or '@' not in to_email:
-        return Response({'error': 'Valid to_email required'}, status=400)
-    message = (request.data.get('message') or '').strip() or 'Please find the letter attached.'
     try:
-        buffer = build_letter_pdf(letter)
-        filename = f"{letter.get_letter_type_display().replace(' ', '_')}_{letter.pk}.pdf"
-        _send_document_email(
-            to_email,
-            subject=f"{letter.get_letter_type_display()}: {letter.title or 'Letter'}",
-            body_text=message,
-            pdf_buffer=buffer,
-            filename=filename,
-        )
-        return Response({'ok': True, 'message': 'Email sent.'})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        return Response(_single_doc_send(
+            request, f"{letter.get_letter_type_display().replace(' ', '_')}_{letter.pk}.pdf", build_letter_pdf(letter),
+            f"{letter.get_letter_type_display()}: {letter.title or 'Letter'}", 'Please find my letter attached.'))
+    except _SendError as exc:
+        return _send_error_response(exc)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def api_compose_email(request):
     """
-    Compose and send one email: to_email, subject, body, optional attachments (JSON array of {type, id}),
-    optional file uploads (multipart key 'files' or 'file').
+    Send one email: to_email, subject, body, optional attachments (JSON array of {type, id}),
+    optional uploads ('files'), optional from_account (GmailAccount id) and application (id).
     """
     try:
-        err = _compose_and_send(request)
-        if err:
-            return Response({'error': err}, status=400)
-        return Response({'ok': True, 'message': 'Email sent.'})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        return Response(_compose_and_send(request))
+    except _SendError as exc:
+        return _send_error_response(exc)
+
+
+# ---------- Connected Gmail ----------
+def _gmail_account_json(acct):
+    return {
+        'id': acct.id, 'email': acct.email, 'needs_reconnect': acct.needs_reconnect,
+        'connected_at': acct.connected_at, 'last_used_at': acct.last_used_at,
+    }
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_gmail_accounts(request):
+    from . import gmail
+    accounts = GmailAccount.objects.filter(user=request.user)
+    return Response({
+        'available': gmail.is_configured(),
+        'accounts': [_gmail_account_json(a) for a in accounts],
+        'default_reply_to': _reply_to_address(request.user),
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_gmail_connect(request):
+    from . import gmail
+    try:
+        return Response({'url': gmail.build_connect_url(request.user)})
+    except gmail.GmailError as exc:
+        return Response({'error': str(exc), 'code': exc.code}, status=400)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def api_gmail_account_detail(request, pk):
+    from . import gmail
+    acct = GmailAccount.objects.filter(user=request.user, pk=pk).first()
+    if not acct:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    gmail.disconnect(acct)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ---------- Import ----------

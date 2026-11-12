@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { FileText, Pencil, FileDown, Trash2, Send, Copy, History, RotateCcw, Palette } from 'lucide-react'
 import { api, downloadExport } from '../api'
 import { useToast } from '../ToastContext'
-import { SendEmailModal } from '../SendEmailModal'
 import { LetterDocument } from '../cv/LetterDocument'
 import { ScaledDoc } from '../cv/ScaledDoc'
 import { getTemplate } from '../cv/templates'
@@ -16,7 +15,6 @@ export function LetterDetail() {
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(null)
   const [duplicating, setDuplicating] = useState(false)
-  const [emailModalOpen, setEmailModalOpen] = useState(false)
   const [revisions, setRevisions] = useState([])
   const [revisionsOpen, setRevisionsOpen] = useState(false)
   const [reverting, setReverting] = useState(null)
@@ -89,7 +87,6 @@ export function LetterDetail() {
           <Link to={`/print/letter/${id}`} className="btn btn-primary"><FileDown size={16} /> Download PDF</Link>
         </div>
       </div>
-      <SendEmailModal open={emailModalOpen} onClose={() => setEmailModalOpen(false)} type="letter" id={id} title={letter?.letter_type_display + (letter?.title ? `: ${letter.title}` : '') || 'Letter'} />
 
       <div className="dv-split">
         <div className="dv-doc">
@@ -102,8 +99,8 @@ export function LetterDetail() {
             <button type="button" className="dv-item" onClick={() => handleExport('docx', `${fileBase}.docx`)} disabled={!!downloading}>
               <FileText size={17} /><span><strong>{downloading === 'docx' ? 'Preparing...' : 'Word (.docx)'}</strong><small>Editable in Word or Google Docs</small></span>
             </button>
-            <button type="button" className="dv-item" onClick={() => setEmailModalOpen(true)}>
-              <Send size={17} /><span><strong>Send by email</strong><small>Attach it to a message</small></span>
+            <button type="button" className="dv-item" onClick={() => navigate(`/compose?letter=${id}`)}>
+              <Send size={17} /><span><strong>Send by email</strong><small>From your Gmail, as a PDF</small></span>
             </button>
           </section>
           <section className="dv-card">
