@@ -705,6 +705,7 @@ a:hover { color: var(--accent-hover); }
 .auth-form .form-group:last-of-type { margin-bottom: 1rem; }
 .auth-form .btn--full { margin-bottom: 0.75rem; }
 .auth-footer { text-align: center; margin: 0; font-size: 0.875rem; color: var(--text-muted); }
+.auth-legal { font-size: 0.8rem; }
 
 .auth-divider {
   display: flex;

@@ -16,6 +16,8 @@ import { trackPageView } from './analytics'
 // Route-level code splitting: each page is its own chunk, fetched on first visit.
 // The admin console is never downloaded by regular users.
 const named = (loader, name) => lazy(() => loader().then(m => ({ default: m[name] })))
+const PrivacyPolicy = named(() => import('./pages/Legal'), 'PrivacyPolicy')
+const TermsOfService = named(() => import('./pages/Legal'), 'TermsOfService')
 const OAuthCallback = named(() => import('./pages/OAuthCallback'), 'OAuthCallback')
 const Dashboard = named(() => import('./pages/Dashboard'), 'Dashboard')
 const CVList = named(() => import('./pages/CVList'), 'CVList')
@@ -65,6 +67,8 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
       <Route path="/view/cv/:token" element={<CVPublic />} />
       <Route path="/view/cv/:token/print" element={<PublicCVPrint />} />
       <Route path="/templates" element={user ? <Navigate to="/cv/templates" replace /> : <PublicTemplates />} />

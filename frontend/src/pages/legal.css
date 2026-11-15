@@ -1,0 +1,14 @@
+.legal { max-width: 46rem; padding: clamp(2rem, 5vw, 3.5rem) 0 clamp(2.5rem, 6vw, 4rem); line-height: 1.7; }
+.legal h1 { font-size: clamp(2rem, 4vw, 2.6rem); margin: 0 0 0.4rem; }
+.legal h2 { font-size: 1.4rem; margin: 2.4rem 0 0.6rem; }
+.legal h3 { margin: 1.5rem 0 0.4rem; }
+.legal p, .legal li { color: var(--lp-text); font-size: 1rem; }
+.legal p { margin: 0 0 0.9rem; }
+.legal ul { margin: 0 0 1rem; padding-left: 1.3rem; }
+.legal li { margin-bottom: 0.45rem; }
+.legal a { color: var(--lp-blue); text-decoration: underline; text-underline-offset: 2px; }
+.legal code { font-size: 0.88em; background: var(--lp-tint); border: 1px solid var(--lp-line); border-radius: 4px; padding: 0.05em 0.35em; word-break: break-all; }
+.legal__updated { color: var(--lp-muted); font-size: 0.92rem; margin-bottom: 2rem !important; }
+.legal__footer { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
+.legal__footer a { color: var(--lp-muted); font-size: 0.95rem; }
+.legal__footer a:hover { color: var(--lp-blue); }

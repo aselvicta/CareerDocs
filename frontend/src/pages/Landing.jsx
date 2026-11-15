@@ -406,8 +406,15 @@ export function Landing() {
             <Link to="/login">Log in</Link>
             <Link to="/register">Create account</Link>
           </nav>
+          <nav aria-label="Legal">
+            <h4>Legal</h4>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/terms">Terms of Service</Link>
+          </nav>
         </div>
-        <div className="lp-wrap lp-footer__copy">© {new Date().getFullYear()} CareerDocs. All rights reserved.</div>
+        <div className="lp-wrap lp-footer__copy">
+          © {new Date().getFullYear()} CareerDocs. All rights reserved. · <Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms of Service</Link>
+        </div>
       </footer>
     </div>
   )

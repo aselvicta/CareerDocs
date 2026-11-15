@@ -89,6 +89,7 @@ export function Login() {
             </button>
           </form>
           <p className="auth-footer">Don&apos;t have an account? <Link to="/register">Create one</Link></p>
+          <p className="auth-footer auth-legal">By continuing, you agree to our <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</p>
           <p className="auth-footer"><Link to="/">← Back to home</Link></p>
         </div>
       </div>

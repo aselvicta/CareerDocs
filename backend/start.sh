@@ -5,4 +5,6 @@ set -o errexit
 python manage.py migrate --noinput
 # Grant admin to accounts in ADMIN_EMAILS (free Render plan has no shell). Never block startup.
 python manage.py ensure_admins || true
+# Privacy policy promises activity logs are kept for 12 months at most.
+python manage.py prune_activity --days 365 || true
 exec gunicorn docs_generator.wsgi:application --bind "0.0.0.0:${PORT:-8000}"

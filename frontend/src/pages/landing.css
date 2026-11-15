@@ -315,10 +315,12 @@
 
 /* ---------- footer ---------- */
 .lp-footer { border-top: 1px solid var(--lp-line); padding: clamp(2.5rem, 5vw, 3.5rem) 0 calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
-.lp-footer__grid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 2rem; }
+.lp-footer__grid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: 2rem; }
 .lp-footer__about { margin: 0.9rem 0 0; color: var(--lp-muted); max-width: 24rem; line-height: 1.6; font-size: 0.95rem; }
 .lp-footer h4 { margin: 0 0 0.8rem; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lp-text); }
 .lp-footer nav a { display: block; color: var(--lp-muted); font-size: 0.95rem; margin-bottom: 0.5rem; }
 .lp-footer nav a:hover { color: var(--lp-blue); }
+.lp-footer__copy a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.lp-footer__copy a:hover { color: var(--lp-blue); }
 .lp-footer__copy { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--lp-line); color: var(--lp-muted); font-size: 0.85rem; }
 @media (max-width: 640px) { .lp-footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lp-footer__grid > div:first-child { grid-column: 1 / -1; } }
