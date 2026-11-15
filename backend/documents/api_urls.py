@@ -4,6 +4,7 @@ from . import google_oauth
 from analytics import views as analytics_views
 
 urlpatterns = [
+    path('site/', api_views.api_site_info),
     path('auth/csrf/', api_views.api_csrf),
     path('auth/google/', google_oauth.google_oauth_start),
     path('auth/google/callback/', google_oauth.google_oauth_callback),

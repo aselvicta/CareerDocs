@@ -67,6 +67,9 @@ DOCS_GENERATOR_API_KEY = os.environ.get('docs_generator_api_key', '')
 # Frontend base URL for share links and OAuth *redirect to SPA* (env: FRONTEND_URL)
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
+# Public contact address shown on the Privacy Policy and Terms pages (served by /api/site/).
+CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', '').strip()
+
 # Accounts that always get admin (staff + superuser) access. Comma-separated emails.
 # Applied on server start and whenever one of these accounts signs in, so no shell is needed.
 ADMIN_EMAILS = {

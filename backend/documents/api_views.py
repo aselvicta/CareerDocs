@@ -13,6 +13,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import parser_classes
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
+from django.conf import settings
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -105,6 +106,12 @@ def _list_response(request, qs, serializer_cls, **ser_kwargs):
 @require_GET
 def api_csrf(request):
     return JsonResponse({'ok': True})
+
+
+@require_GET
+def api_site_info(request):
+    """Public site details the frontend shows on its legal pages. Set CONTACT_EMAIL in the environment."""
+    return JsonResponse({'contact_email': settings.CONTACT_EMAIL})
 
 
 @csrf_exempt

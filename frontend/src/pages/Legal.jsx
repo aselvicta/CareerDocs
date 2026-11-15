@@ -1,20 +1,34 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Sun, Moon } from 'lucide-react'
 import { AppLogo, Wordmark } from '../AppLogo'
 import { useTheme } from '../ThemeContext'
+import { api } from '../api'
 import './landing.css'
 import './legal.css'
 
-// Set VITE_CONTACT_EMAIL in the environment (Vercel project settings, or frontend/.env locally).
-// It must be a mailbox someone reads: Google's verification team and users will write to it.
-// Production builds fail without it (see vite.config.js).
-export const CONTACT_EMAIL = (import.meta.env.VITE_CONTACT_EMAIL || '').trim()
+// The contact address comes from the backend (CONTACT_EMAIL env var, served at /api/site/),
+// so it can change without a frontend rebuild. Fetched once per page load.
+let contactPromise
+function useContactEmail() {
+  const [email, setEmail] = useState('')
+  useEffect(() => {
+    contactPromise ||= api.get('/site/', { public: true })
+      .then(d => (d?.contact_email || '').trim())
+      .catch(() => { contactPromise = null; return '' })
+    let live = true
+    contactPromise.then(e => { if (live) setEmail(e) })
+    return () => { live = false }
+  }, [])
+  return email
+}
+
 const SITE = typeof window !== 'undefined' ? window.location.origin : ''
 const UPDATED = '16 November 2026'
 
 function LegalShell({ title, children }) {
   const { theme, toggleTheme } = useTheme()
+  const email = useContactEmail()
   useEffect(() => {
     document.title = `${title} | CareerDocs`
     window.scrollTo(0, 0)
@@ -47,7 +61,7 @@ function LegalShell({ title, children }) {
           <Link to="/">Home</Link>
           <Link to="/privacy">Privacy Policy</Link>
           <Link to="/terms">Terms of Service</Link>
-          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          {email && <a href={`mailto:${email}`}>{email}</a>}
         </div>
         <div className="lp-wrap lp-footer__copy">© {new Date().getFullYear()} CareerDocs. All rights reserved.</div>
       </footer>
@@ -55,7 +69,10 @@ function LegalShell({ title, children }) {
   )
 }
 
-const Mail = () => <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+function Mail() {
+  const email = useContactEmail()
+  return email ? <a href={`mailto:${email}`}>{email}</a> : <span>our support email</span>
+}
 
 export function PrivacyPolicy() {
   return (
