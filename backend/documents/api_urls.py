@@ -14,6 +14,7 @@ urlpatterns = [
     path('auth/login/', api_views.api_login),
     path('auth/logout/', api_views.api_logout),
     path('auth/me/', api_views.api_me),
+    path('auth/delete-account/', api_views.api_delete_account),
     path('profile/', api_views.api_profile),
     path('cvs/', api_views.api_cv_list_create),
     path('cvs/import/', api_views.api_cv_import),

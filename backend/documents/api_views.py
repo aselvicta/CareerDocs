@@ -201,6 +201,32 @@ def api_logout(request):
     return JsonResponse({'ok': True})
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_delete_account(request):
+    """
+    Permanently delete the signed-in user and everything linked to them.
+    The body must repeat the account email ({"confirm": "<email>"}) so a stray request cannot do this.
+    """
+    from analytics.models import ActivityEvent
+    from . import gmail
+
+    user = request.user
+    typed = str((request.data or {}).get('confirm') or '').strip().lower()
+    if not typed or typed != (user.email or '').strip().lower():
+        return Response({'error': 'Type your account email exactly to confirm.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Revoke Gmail access at Google first (best effort), then drop the stored tokens.
+    for acct in GmailAccount.objects.filter(user=user):
+        gmail.disconnect(acct)
+    # Activity logs keep rows with user=NULL on delete; remove them so no IP/user agent trail remains.
+    ActivityEvent.objects.filter(user=user).delete()
+    logout(request)
+    # Cascades to profile, CVs, letters, revisions, applications and the API token.
+    user.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def api_me(request):

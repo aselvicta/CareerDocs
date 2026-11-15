@@ -89,7 +89,7 @@ export function PrivacyPolicy() {
         <li>If you sign in with Google, we receive only your name, email address and profile picture URL from Google, and we use them to create and run your account.</li>
         <li>If you connect Gmail, we can only <strong>send</strong> emails you ask us to send. We cannot read, search or delete your email.</li>
         <li>We do not sell your data, we do not use it for advertising, and we do not use Google user data to train AI models.</li>
-        <li>You can delete your documents at any time and ask us to delete your account.</li>
+        <li>You can delete your documents, or your whole account, at any time from within the app.</li>
       </ul>
 
       <h2>1. Information we collect</h2>
@@ -199,9 +199,11 @@ export function PrivacyPolicy() {
         <li>Disconnecting Gmail deletes the stored token immediately.</li>
         <li>Activity logs are deleted after 12 months.</li>
         <li>
-          To delete your account and all data linked to it, email <Mail /> from the address on your account.
-          We will complete the deletion within 30 days, including any Google data we hold. Backups are
-          overwritten on a rolling basis after that.
+          You can delete your account at any time in Settings, under Account. This immediately and permanently
+          deletes your account, profile, documents, saved versions, job applications and activity logs, and
+          disconnects any Gmail accounts (we revoke access with Google and delete the stored tokens). If you
+          cannot sign in, email <Mail /> from the address on your account and we will delete it within 30 days.
+          Copies in our hosting provider&apos;s backups are overwritten on a rolling basis after that.
         </li>
       </ul>
 
@@ -294,7 +296,8 @@ export function TermsOfService() {
 
       <h2>7. Ending your account</h2>
       <p>
-        You can stop using CareerDocs at any time and ask us to delete your account by emailing <Mail />.
+        You can stop using CareerDocs at any time and delete your account in Settings, under Account. If you
+        cannot sign in, email <Mail /> and we will delete it for you.
       </p>
 
       <h2>8. Disclaimers and liability</h2>

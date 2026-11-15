@@ -5,6 +5,7 @@ import { useAuth } from '../AuthContext'
 import { useTheme } from '../ThemeContext'
 import { useToast } from '../ToastContext'
 import { useSenders, GMAIL_ERRORS } from '../shell/useSenders'
+import { Modal } from '../shell/Modal'
 import { relativeTime } from '../shell/format'
 
 const EMPTY_REF = { name: '', title: '', company: '', email: '', phone: '' }
@@ -27,6 +28,30 @@ export function Profile() {
   const senders = useSenders()
   const [connecting, setConnecting] = useState(false)
   const [removing, setRemoving] = useState(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteText, setDeleteText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const deleteMatches = deleteText.trim().toLowerCase() === (user?.email || '').trim().toLowerCase()
+
+  function closeDelete() {
+    if (deleting) return
+    setDeleteOpen(false)
+    setDeleteText('')
+  }
+  async function deleteAccount(e) {
+    e.preventDefault()
+    if (!deleteMatches) return
+    setDeleting(true)
+    try {
+      await api.post('/auth/delete-account/', { confirm: deleteText.trim() })
+      addToast('Your account and all its data have been deleted.', 'success')
+      logout()
+      window.location.assign('/')
+    } catch (err) {
+      addToast(err?.message || 'Could not delete your account. Please try again.', 'error')
+      setDeleting(false)
+    }
+  }
 
   // Result of the Gmail connect redirect: /profile?gmail=connected#email or ?gmail_error=code#email
   useEffect(() => {
@@ -179,6 +204,13 @@ export function Profile() {
           <section id="account" className="st-card">
             <header><h2>Account</h2><p>Signed in as <strong>{user?.email}</strong>.</p></header>
             <button type="button" className="btn btn-secondary" onClick={logout}><LogOut size={16} /> Log out</button>
+            <div className="st-danger">
+              <div>
+                <h3>Delete account</h3>
+                <p>Permanently delete your account, CVs, letters, job applications and settings, and disconnect any Gmail accounts. This cannot be undone.</p>
+              </div>
+              <button type="button" className="btn btn-danger-solid" onClick={() => setDeleteOpen(true)}><Trash2 size={16} /> Delete account</button>
+            </div>
           </section>
 
           <div className={`st-savebar ${dirty ? 'is-visible' : ''}`} aria-hidden={!dirty}>
@@ -188,6 +220,28 @@ export function Profile() {
           </div>
         </form>
       </div>
+
+      <Modal open={deleteOpen} onClose={closeDelete} title="Delete your account?" width={460}>
+        <form onSubmit={deleteAccount}>
+          <div className="md__body">
+            <p className="md__text">
+              This permanently deletes your account and everything in it: CVs, letters, saved versions, job applications,
+              settings and connected Gmail accounts. Download anything you want to keep first. This cannot be undone.
+            </p>
+            <label className="ed-field" style={{ marginTop: '1rem' }}>
+              <span className="ed-field__label">Type <strong>{user?.email}</strong> to confirm</span>
+              <input className="form-control" value={deleteText} onChange={e => setDeleteText(e.target.value)}
+                autoComplete="off" autoCapitalize="off" spellCheck={false} disabled={deleting} data-autofocus />
+            </label>
+          </div>
+          <div className="md__foot">
+            <button type="button" className="btn btn-ghost" onClick={closeDelete} disabled={deleting}>Cancel</button>
+            <button type="submit" className="btn btn-danger-solid" disabled={!deleteMatches || deleting}>
+              {deleting ? 'Deleting...' : 'Delete my account'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
