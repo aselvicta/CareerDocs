@@ -38,7 +38,8 @@ export function OAuthCallback() {
     if (token) {
       setToken(token)
       loadUser()
-        .then(() => {
+        .then(user => {
+          if (!user) throw new Error('not signed in')
           addToast('Signed in with Google.', 'success')
           navigate('/', { replace: true })
         })
