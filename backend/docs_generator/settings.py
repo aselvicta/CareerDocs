@@ -206,30 +206,24 @@ REST_FRAMEWORK = {
 }
 
 
-# CORS and CSRF settings for local dev and production (Render + Vercel)
-_dev_origins = ['http://localhost:5173', 'http://127.0.0.1:5173']
-_prod_cors = [
-    'https://careerdocs.vercel.app',  # Vercel frontend
-    'https://getcareerdocs.co.tz',  # Custom domain
-    'https://www.getcareerdocs.co.tz',
-    'https://careerdocs-1.onrender.com',  # Render backend
-]
-_extra_cors = [
-    o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()
-]
-CORS_ALLOWED_ORIGINS = list(dict.fromkeys(_dev_origins + _prod_cors + _extra_cors))
+# CORS and CSRF: allowed browser origins come from the environment, never hardcoded.
+# FRONTEND_URL is always allowed; add more (e.g. apex + www, preview URLs) as a
+# comma-separated list in CORS_ALLOWED_ORIGINS / CSRF_TRUSTED_ORIGINS.
+def _origins_from_env(name):
+    return [o.strip().rstrip('/') for o in os.environ.get(name, '').split(',') if o.strip()]
+
+
+_dev_origins = ['http://localhost:5173', 'http://127.0.0.1:5173'] if DEBUG else []
+_frontend_origin = [FRONTEND_URL.rstrip('/')]
+
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys(
+    _dev_origins + _frontend_origin + _origins_from_env('CORS_ALLOWED_ORIGINS')
+))
 CORS_ALLOW_CREDENTIALS = True
 
-_prod_csrf = [
-    'https://careerdocs.vercel.app',
-    'https://getcareerdocs.co.tz',
-    'https://www.getcareerdocs.co.tz',
-    'https://careerdocs-1.onrender.com',
-]
-_extra_csrf = [
-    o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
-]
-CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(_dev_origins + _prod_csrf + _extra_csrf))
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(
+    _dev_origins + _frontend_origin + _origins_from_env('CSRF_TRUSTED_ORIGINS')
+))
 
 # Email (SMTP by default; override with .env)
 # For Gmail: use an App Password (not your normal account password).
