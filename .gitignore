@@ -5,3 +5,4 @@ db.sqlite3
 venv/
 *.log
 backend/staticfiles/
+docs/BUILD_NOTES.md
