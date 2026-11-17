@@ -42,6 +42,10 @@ class DesignMixin:
 class CVSerializer(DesignMixin, serializers.ModelSerializer):
     template_display = serializers.CharField(source='get_template_display', read_only=True)
     share_url = serializers.SerializerMethodField()
+    title = serializers.CharField(max_length=200, required=False, allow_blank=True)
+
+    def validate_title(self, value):
+        return value.strip() or 'My CV'
 
     def get_share_url(self, obj):
         if obj.share_token:
@@ -106,6 +110,16 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
 class LetterSerializer(DesignMixin, serializers.ModelSerializer):
     letter_type_display = serializers.CharField(source='get_letter_type_display', read_only=True)
+    title = serializers.CharField(max_length=200, required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        # An untitled letter is named after its type (and company) instead of failing to save.
+        if 'title' in attrs and not attrs['title'].strip():
+            letter_type = attrs.get('letter_type') or getattr(self.instance, 'letter_type', '')
+            company = (attrs.get('company', getattr(self.instance, 'company', '')) or '').strip()
+            label = dict(Letter.LETTER_TYPE_CHOICES).get(letter_type, 'Letter')
+            attrs['title'] = f'{label} for {company}'[:200] if company else label
+        return attrs
 
     class Meta:
         model = Letter

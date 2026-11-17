@@ -36,6 +36,17 @@ function headers(includeAuth = true, body) {
   return h
 }
 
+/** Turn DRF field errors like {"title": ["This field may not be blank."]} into "Title: This field may not be blank." */
+function fieldErrorMessage(data) {
+  if (!data || typeof data !== 'object' || data instanceof Blob) return ''
+  const [field, msgs] = Object.entries(data)[0] || []
+  if (!field) return ''
+  const msg = Array.isArray(msgs) ? msgs[0] : msgs
+  if (typeof msg !== 'string') return ''
+  const label = field === 'non_field_errors' ? '' : field.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) + ': '
+  return label + msg
+}
+
 async function handleResponse(r) {
   const isJson = r.headers.get('content-type')?.includes('application/json')
   const data = isJson ? await r.json().catch(() => ({})) : await r.blob()
@@ -46,7 +57,7 @@ async function handleResponse(r) {
         'API not found (404). Set VITE_API_BASE_URL on Vercel to your Django host and redeploy.',
       )
     }
-    const err = new Error(data?.error || data?.detail || `Request failed ${r.status}`)
+    const err = new Error(data?.error || data?.detail || fieldErrorMessage(data) || `Request failed ${r.status}`)
     err.status = r.status
     err.data = data
     throw err
