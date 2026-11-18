@@ -324,3 +324,7 @@
 .lp-footer__copy a:hover { color: var(--lp-blue); }
 .lp-footer__copy { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--lp-line); color: var(--lp-muted); font-size: 0.85rem; }
 @media (max-width: 640px) { .lp-footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lp-footer__grid > div:first-child { grid-column: 1 / -1; } }
+
+/* "learn more" links from feature sections to their own pages */
+.lp-more { display: inline-block; margin-top: -0.5rem; color: var(--lp-blue); font-weight: 600; font-size: 0.95rem; text-decoration: underline; text-underline-offset: 3px; }
+.lp-more::after { content: ' →'; }

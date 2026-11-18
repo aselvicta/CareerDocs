@@ -5,7 +5,8 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  // Signed-out visitors have no token to check, so public pages render on the first frame.
+  const [loading, setLoading] = useState(() => !!getToken())
 
   async function loadUser() {
     if (!getToken()) {

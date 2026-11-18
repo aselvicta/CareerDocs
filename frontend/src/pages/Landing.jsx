@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Sun, Moon, ChevronDown, MapPin, Phone, Send } from 'lucide-react'
-import { AppLogo, Wordmark } from '../AppLogo'
+import { ChevronDown, MapPin, Phone, Send } from 'lucide-react'
 import { getApiBase } from '../api'
-import { useTheme } from '../ThemeContext'
+import { PublicHeader, PublicFooter } from './PublicChrome'
+import { HOME_FAQS as FAQS } from '../seo/site'
 import photo480 from '../assets/landing-students-480.webp'
 import photo736 from '../assets/landing-students-736.webp'
 import photoJpg from '../assets/landing-students-736.jpg'
@@ -22,14 +22,6 @@ const STEPS = [
   { title: 'Pick a template', text: 'Start from a clean, recruiter-friendly layout. You can switch designs at any time without retyping.' },
   { title: 'Fill it in, AI polishes it', text: 'Add your experience in plain words. The AI turns it into clear, results-focused bullet points.' },
   { title: 'Download and apply', text: 'Export to PDF or Word, share a private link, or email it to an employer straight from CareerDocs.' },
-]
-
-const FAQS = [
-  { q: 'Is CareerDocs free to use?', a: 'Yes. You can create an account and build your CVs, letters and application tracker for free.' },
-  { q: 'Can I download my CV as a Word document?', a: 'Yes. Every CV and letter can be exported as a PDF or as an editable Word (.docx) file.' },
-  { q: 'What does the AI actually do?', a: 'It rewrites bullet points and summaries, suggests alternative wording, drafts cover letters and emails, tailors your CV to a job description and runs an ATS keyword check. You stay in control of every change.' },
-  { q: 'Who can see my documents?', a: 'Your documents are private to your account and are not visible to other users. A CV only becomes public if you create a share link, and you can turn that link off at any time.' },
-  { q: 'Do I need a Google account?', a: 'No. Sign up with any email and password, or use Google for one-click sign in.' },
 ]
 
 /** Wake the backend (free hosting sleeps when idle) while the visitor reads, so sign-in is fast. */
@@ -155,47 +147,33 @@ function HeroPattern() {
 /** Miniature CV in each template's style, for the template gallery. */
 export function Landing() {
   useWarmBackend()
-  const { theme, toggleTheme } = useTheme()
   const heroRef = useHeroParallax()
 
   return (
     <div className="lp">
-      <header className="lp-nav">
-        <div className="lp-wrap lp-nav__inner">
-          <Link to="/" className="lp-brand" aria-label="CareerDocs home">
-            <AppLogo className="lp-brand__mark" alt="" /> <Wordmark />
-          </Link>
-          <nav className="lp-nav__links" aria-label="Sections">
-            <a href="#templates">Templates</a>
-            <a href="#how">How it works</a>
-            <a href="#features">Features</a>
-            <a href="#faq">FAQ</a>
-          </nav>
-          <div className="lp-nav__actions">
-            <button type="button" className="lp-icon-btn" onClick={toggleTheme}
-              aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
-              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
-            </button>
-            <Link to="/login" className="lp-link">Log in</Link>
-            <Link to="/register" className="lp-btn lp-btn--primary">Build my CV</Link>
-          </div>
-        </div>
-      </header>
+      <PublicHeader links={[
+        { href: '#templates', label: 'Templates' },
+        { href: '#how', label: 'How it works' },
+        { href: '#features', label: 'Features' },
+        { to: '/guides', label: 'Guides' },
+        { href: '#faq', label: 'FAQ' },
+      ]} />
 
       <main>
         {/* ---------- Hero ---------- */}
         <section className="lp-hero">
           <div className="lp-wrap lp-hero__grid">
             <div className="lp-hero__copy">
-              <p className="lp-overline">CV and cover letter builder</p>
-              <h1>Build a CV that gets you <mark>the interview.</mark></h1>
+              <p className="lp-overline">Free CV maker and cover letter generator</p>
+              <h1>Build a professional CV that gets you <mark>the interview.</mark></h1>
               <p className="lp-lead">
-                Choose a recruiter-friendly template, let AI sharpen your wording, check it against the
-                job description and download it as PDF or Word.
+                Create a professional CV for free: choose a recruiter-friendly template, let AI sharpen
+                your wording, check it against the job description and download it as PDF or Word. Built
+                for job seekers in Tanzania and across East Africa.
               </p>
               <div className="lp-hero__ctas">
                 <Link to="/register" className="lp-btn lp-btn--primary lp-btn--lg">Build my CV</Link>
-                <Link to="/register" className="lp-btn lp-btn--ghost lp-btn--lg">Write a cover letter</Link>
+                <Link to="/cover-letter-generator" className="lp-btn lp-btn--ghost lp-btn--lg">Write a cover letter</Link>
               </div>
               <p className="lp-hero__note">Free to start. Already have an account? <Link to="/login">Log in</Link></p>
             </div>
@@ -279,6 +257,7 @@ export function Landing() {
                 <p className="lp-overline">AI writing</p>
                 <h2>Say what you did, the way recruiters want to read it</h2>
                 <p className="lp-sub">Write your experience in plain words. CareerDocs rewrites it into specific, results-focused bullet points, and suggests alternatives until it sounds like you.</p>
+                <Link to="/cv-maker" className="lp-more">More about the free CV maker</Link>
               </div>
               <div className="lp-card lp-rewrite" aria-label="Example of an AI rewrite">
                 <div className="lp-rewrite__row">
@@ -298,6 +277,7 @@ export function Landing() {
                 <p className="lp-overline">ATS check and tailoring</p>
                 <h2>Tailor your CV to every job description</h2>
                 <p className="lp-sub">Paste a job advert to see which keywords your CV already covers and which are missing, then tailor your CV and cover letter to match.</p>
+                <Link to="/ats-cv-checker" className="lp-more">How the ATS CV checker works</Link>
               </div>
               <div className="lp-card lp-ats" aria-label="Example of an ATS keyword check">
                 <div className="lp-ats__top">
@@ -323,6 +303,7 @@ export function Landing() {
                 <p className="lp-overline">Letters and tracking</p>
                 <h2>Every application, organised in one place</h2>
                 <p className="lp-sub">Generate cover letters, internship and job application letters, then track each role with its deadline, status and the exact CV and letter you sent.</p>
+                <Link to="/application-letter" className="lp-more">Job application letter format</Link>
               </div>
               <div className="lp-card lp-tracker" aria-label="Example of the application tracker">
                 <table>
@@ -355,7 +336,10 @@ export function Landing() {
                 <div><dt>Internships and attachments</dt><dd>Ready-made letter types for internship and job applications.</dd></div>
                 <div><dt>Graduate job hunt</dt><dd>Tailor each application and keep track of every deadline.</dd></div>
               </dl>
-              <Link to="/register" className="lp-btn lp-btn--primary">Create my free account</Link>
+              <div className="lp-hero__ctas">
+                <Link to="/register" className="lp-btn lp-btn--primary">Create my free account</Link>
+                <Link to="/graduate-cv" className="lp-btn lp-btn--ghost">CV tips for graduates</Link>
+              </div>
             </div>
           </div>
         </section>
@@ -388,34 +372,7 @@ export function Landing() {
         </section>
       </main>
 
-      <footer className="lp-footer">
-        <div className="lp-wrap lp-footer__grid">
-          <div>
-            <span className="lp-brand"><AppLogo className="lp-brand__mark" alt="" /> <Wordmark /></span>
-            <p className="lp-footer__about">CV and cover letter builder with AI writing, ATS checks and application tracking.</p>
-          </div>
-          <nav aria-label="Product">
-            <h4>Product</h4>
-            <Link to="/templates">Templates</Link>
-            <a href="#how">How it works</a>
-            <a href="#features">Features</a>
-            <a href="#faq">FAQ</a>
-          </nav>
-          <nav aria-label="Account">
-            <h4>Account</h4>
-            <Link to="/login">Log in</Link>
-            <Link to="/register">Create account</Link>
-          </nav>
-          <nav aria-label="Legal">
-            <h4>Legal</h4>
-            <Link to="/privacy">Privacy Policy</Link>
-            <Link to="/terms">Terms of Service</Link>
-          </nav>
-        </div>
-        <div className="lp-wrap lp-footer__copy">
-          © {new Date().getFullYear()} CareerDocs. All rights reserved. · <Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms of Service</Link>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   )
 }

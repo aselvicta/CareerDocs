@@ -4,7 +4,7 @@ const ThemeContext = createContext(null)
 const STORAGE_KEY = 'docs_theme'
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem(STORAGE_KEY) || 'light')
+  const [theme, setTheme] = useState(() => (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'light')
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)

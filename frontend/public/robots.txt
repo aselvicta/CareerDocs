@@ -1,0 +1,13 @@
+# CareerDocs: public pages are open to crawlers; signed-in app pages are not.
+# Shared CV links (/view/) and print views stay crawlable so Google sees their noindex header (vercel.json).
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /oauth/
+Disallow: /cv/
+Disallow: /letters/
+Disallow: /applications
+Disallow: /compose
+Disallow: /profile
+
+Sitemap: https://www.getcareerdocs.co.tz/sitemap.xml

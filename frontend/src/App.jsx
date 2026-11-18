@@ -11,7 +11,12 @@ import { Analytics } from '@vercel/analytics/react'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { Landing } from './pages/Landing'
+import { SeoPage } from './pages/SeoPage'
+import { PublicTemplates } from './pages/PublicTemplates'
+import { NotFound } from './pages/NotFound'
 import { trackPageView } from './analytics'
+import { useSeo } from './seo/head'
+import { TOOL_PAGES } from './seo/content'
 
 // Route-level code splitting: each page is its own chunk, fetched on first visit.
 // The admin console is never downloaded by regular users.
@@ -23,7 +28,6 @@ const Dashboard = named(() => import('./pages/Dashboard'), 'Dashboard')
 const CVList = named(() => import('./pages/CVList'), 'CVList')
 const CVTemplates = named(() => import('./pages/CVTemplates'), 'CVTemplates')
 const LetterTemplates = named(() => import('./pages/CVTemplates'), 'LetterTemplates')
-const PublicTemplates = named(() => import('./pages/PublicTemplates'), 'PublicTemplates')
 const CVPrint = named(() => import('./pages/PrintView'), 'CVPrint')
 const LetterPrint = named(() => import('./pages/PrintView'), 'LetterPrint')
 const PublicCVPrint = named(() => import('./pages/PrintView'), 'PublicCVPrint')
@@ -56,6 +60,13 @@ function PageTracker() {
   return null
 }
 
+/** Title, description, canonical, Open Graph and JSON-LD for the current URL. */
+function SeoSync() {
+  const { pathname } = useLocation()
+  useSeo(pathname)
+  return null
+}
+
 function AppRoutes() {
   const { user, loading } = useAuth()
   const location = useLocation()
@@ -72,6 +83,10 @@ function AppRoutes() {
       <Route path="/view/cv/:token" element={<CVPublic />} />
       <Route path="/view/cv/:token/print" element={<PublicCVPrint />} />
       <Route path="/templates" element={user ? <Navigate to="/cv/templates" replace /> : <PublicTemplates />} />
+      {/* Public content pages (src/seo/content.js): prerendered at build time and listed in the sitemap */}
+      {TOOL_PAGES.map(p => <Route key={p.path} path={p.path} element={<SeoPage />} />)}
+      <Route path="/guides" element={<SeoPage />} />
+      <Route path="/guides/:slug" element={<SeoPage />} />
       {/* Print views: just the document, used to save a pixel-exact PDF */}
       <Route path="/print/cv/:id" element={<ProtectedRoute><CVPrint /></ProtectedRoute>} />
       <Route path="/print/letter/:id" element={<ProtectedRoute><LetterPrint /></ProtectedRoute>} />
@@ -105,25 +120,33 @@ function AppRoutes() {
         <Route path="applications/:id" element={<ApplicationDetail />} />
         <Route path="applications/:id/edit" element={<ApplicationForm />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={user ? <Navigate to="/" replace /> : <NotFound />} />
     </Routes>
     </Suspense>
+  )
+}
+
+/** Everything inside the router. Shared with the build-time prerender (entry-server.jsx). */
+export function AppTree() {
+  return (
+    <ThemeProvider>
+      <ToastProvider>
+        <EmailDraftProvider>
+          <AuthProvider>
+            <PageTracker />
+            <SeoSync />
+            <AppRoutes />
+          </AuthProvider>
+        </EmailDraftProvider>
+      </ToastProvider>
+    </ThemeProvider>
   )
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <ToastProvider>
-          <EmailDraftProvider>
-            <AuthProvider>
-              <PageTracker />
-              <AppRoutes />
-            </AuthProvider>
-          </EmailDraftProvider>
-        </ToastProvider>
-      </ThemeProvider>
+      <AppTree />
       <Analytics />
     </BrowserRouter>
   )
