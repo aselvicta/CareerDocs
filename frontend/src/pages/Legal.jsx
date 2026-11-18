@@ -6,6 +6,7 @@ import { useTheme } from '../ThemeContext'
 import { api } from '../api'
 import './landing.css'
 import './legal.css'
+import { SITE_URL } from '../seo/site'
 
 // The contact address comes from the backend (CONTACT_EMAIL env var, served at /api/site/),
 // so it can change without a frontend rebuild. Fetched once per page load.
@@ -23,17 +24,13 @@ function useContactEmail() {
   return email
 }
 
-const SITE = typeof window !== 'undefined' ? window.location.origin : ''
+const SITE = SITE_URL
 const UPDATED = '16 November 2026'
 
 function LegalShell({ title, children }) {
   const { theme, toggleTheme } = useTheme()
   const email = useContactEmail()
-  useEffect(() => {
-    document.title = `${title} | CareerDocs`
-    window.scrollTo(0, 0)
-    return () => { document.title = 'CareerDocs: build CVs and cover letters with AI' }
-  }, [title])
+  useEffect(() => { window.scrollTo(0, 0) }, [title])
 
   return (
     <div className="lp">

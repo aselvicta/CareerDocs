@@ -19,6 +19,7 @@ export function getApiBase() {
 const API = getApiBase()
 
 export function getToken() {
+  if (typeof localStorage === 'undefined') return null
   return localStorage.getItem(TOKEN_KEY)
 }
 
