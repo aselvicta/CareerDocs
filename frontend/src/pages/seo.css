@@ -20,8 +20,7 @@
 .sp-body p { margin: 0 0 1.1rem; }
 .sp-body ul, .sp-body ol { margin: 0 0 1.4rem; padding-left: 1.4rem; }
 .sp-body li { margin-bottom: 0.55rem; padding-left: 0.2rem; }
-.sp-body a { color: var(--lp-blue); text-decoration: underline; text-underline-offset: 2px; }
-.sp-body a.lp-btn { text-decoration: none; }
+.sp-body a:not(.lp-btn) { color: var(--lp-blue); text-decoration: underline; text-underline-offset: 2px; }
 
 .sp-tip { padding: 0.9rem 1.1rem; border-left: 3px solid #fcd34d; background: var(--lp-tint); border-radius: 0 8px 8px 0; }
 .sp-example { margin: 0 0 1.6rem; border: 1px solid var(--lp-line); border-radius: 10px; overflow: hidden; }
