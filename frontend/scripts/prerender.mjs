@@ -1,7 +1,7 @@
 /**
  * After `vite build` (client, into dist/) and `vite build --ssr` (into dist-ssr/):
  *  - writes one static HTML file per public page, with its own <head> tags and real body content
- *  - keeps the bare app shell as dist/app.html (noindex), served for every other URL (vercel.json)
+ *  - keeps the bare app shell as dist/app.html (noindex), served for every other URL via the "/app" rewrite in vercel.json (cleanUrls drops .html)
  *  - writes dist/sitemap.xml
  */
 import fs from 'node:fs/promises'

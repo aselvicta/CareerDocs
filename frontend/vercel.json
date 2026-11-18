@@ -8,7 +8,7 @@
       "permanent": true
     }
   ],
-  "rewrites": [{ "source": "/(.*)", "destination": "/app.html" }],
+  "rewrites": [{ "source": "/(.*)", "destination": "/app" }],
   "headers": [
     {
       "source": "/assets/(.*)",
